@@ -38,17 +38,27 @@ export function createPoliceSystem(scene, state) {
     if (stars >= 4) ensureHeli();
   }
 
+  function clearUnits() {
+    if (units.heli) { units.heli.remove(scene); units.heli = null; }
+    for (const rb of units.roadblocks) rb.remove(scene);
+    units.roadblocks.length = 0;
+    for (const car of units.cars) { if (car.mesh && car.mesh.parent) scene.remove(car.mesh); }
+    units.cars.length = 0;
+  }
+
   function cleanup(stars) {
     if (stars < 4 && units.heli) { units.heli.remove(scene); units.heli = null; }
     if (stars < 3) { for (const rb of units.roadblocks) rb.remove(scene); units.roadblocks.length = 0; }
   }
 
   function update(dt, state) {
+    if (state.mode !== 'play') return;
     const now = state.time;
     const canSee = units.cars.some(c => c.hasSight);
     const h = heat.update(dt, now, canSee);
     state.player.wanted = h.stars;
-    if (h.stars > 0) syncStars(h.stars); else cleanup(0);
+    if (h.stars > 0) { syncStars(h.stars); cleanup(h.stars); }
+    else if (units.cars.length || units.heli || units.roadblocks.length) { clearUnits(); }
 
     for (const car of units.cars) car.update(dt, state);
     for (const rb of units.roadblocks) rb.update(dt, state);
@@ -64,11 +74,11 @@ export function createPoliceSystem(scene, state) {
     if (units.heli) dispatchUnits.push({ icon: '🚁', callSign: units.heli.callSign, distance: Math.round(Math.hypot(units.heli.mesh.position.x - state.player.x, units.heli.mesh.position.z - state.player.z)), tag: 'SPOTLIGHT' });
     dispatchUnits.sort((a, b) => a.distance - b.distance);
     state.dispatch = { visible: h.stars > 0, stars: h.stars, units: dispatchUnits.slice(0, 6), more: Math.max(0, dispatchUnits.length - 4) };
-    state.wanted = { searching: h.search > 0 && h.stars > 0, status: h.search > 0 ? 'SEARCHING' : (h.stars >= 4 ? 'AIR UNIT OVERHEAD' : '') };
+    state.wanted = { searching: h.search > 0.5 && h.stars > 0, status: h.search > 0.5 ? 'SEARCHING' : (h.stars >= 4 ? 'AIR UNIT OVERHEAD' : '') };
     state.minimap = state.minimap || {};
     state.minimap.police = units.cars.map(c => ({ x: c.mesh.position.x, z: c.mesh.position.z, yaw: c.yaw || c.mesh.rotation.y }));
-    if (h.stars === 0) { state.dispatch.units = []; state.dispatch.visible = false; state.minimap.police = []; }
+    if (h.stars === 0) { state.dispatch.units = []; state.dispatch.visible = false; state.minimap.police = []; state.wanted = { searching: false, status: '' }; }
   }
 
-  return { update, heat, units };
+  return { update, heat, units, reportCrime: (type, now) => heat.reportCrime(type, now), clearUnits };
 }

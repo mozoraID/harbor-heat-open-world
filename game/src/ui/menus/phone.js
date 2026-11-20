@@ -51,7 +51,15 @@ export function createPhone(rootEl, callbacks = {}) {
   ];
 
   function renderHome() {
-    home.innerHTML = apps.map(a => `<div class="hh-app" data-app="${a.id}"><div class="hh-app-icon">${a.icon}</div><div>${a.label}</div></div>`).join('');
+    const time = lastState.timeOfDay || lastState.clock || '18:42';
+    const date = lastState.phoneDate || 'FRI · NOV 20';
+    const notif = lastState.phoneNotification || { from: 'Sasha Lune', text: "Car's at the marina. Don't scratch it." };
+    home.innerHTML = `
+      <div class="hh-phone-status"><span data-ph-time>${time}</span><span>▂▃▅▇  84% 🔋</span></div>
+      <div class="hh-phone-clock"><div class="time" data-ph-clock>${time}</div><div class="date">${date}</div></div>
+      <div class="hh-phone-notif"><div class="from">${notif.from || ''}</div><div class="msg">${notif.text || ''}</div></div>
+      <div class="hh-app-grid">${apps.map(a => `<div class="hh-app" data-app="${a.id}"><div class="hh-app-icon">${a.icon}</div><div>${a.label}</div></div>`).join('')}</div>
+    `;
   }
 
   function openApp(id) {

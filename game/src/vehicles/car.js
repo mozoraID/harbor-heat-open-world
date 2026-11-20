@@ -73,7 +73,11 @@ export function updateCar(car, dt, control, colliders, bounds, state) {
 
   if (car.damage > 0.35) car.smoke = Math.min(1, car.smoke + dt * 0.5);
   if (car.damage > 0.55 && state && state.effects && Math.random() < 0.15) state.effects.smoke(car.x, 1.1, car.z - Math.cos(car.yaw) * 1.2, 0.7);
-  if (car.health <= 0) { car.dead = true; car.speed = 0; if (state && state.effects) state.effects.smoke(car.x, 1.2, car.z, 1.5); }
+  if (car.health <= 0 && !car.dead) {
+    car.dead = true; car.speed = 0; car.exploded = true;
+    if (state && state.effects) { state.effects.explode(car.x, 1.2, car.z); state.effects.smoke(car.x, 1.5, car.z, 1.6); }
+    if (state && state.police && state.police.reportCrime) state.police.reportCrime('explosion', state.time);
+  } else if (car.health <= 0) { car.dead = true; car.speed = 0; }
 }
 
 export function parkCars(scene, layout, count, rng) {

@@ -11,10 +11,12 @@ export function createHeat() {
   function update(dt, now, canSeePolice) {
     if (canSeePolice) { heat.visible = 1.0; heat.search = 0; heat.lastCrime = now; }
     else heat.visible = Math.max(0, heat.visible - dt * 0.1);
-    heat.value = Math.max(0, heat.value - dt * (canSeePolice ? 0 : 2.2));
-    if (!canSeePolice && heat.stars > 0 && now - heat.lastCrime > 4) {
+    const decay = canSeePolice ? 0 : (heat.search > 0.5 ? 14 : 2.5);
+    heat.value = Math.max(0, heat.value - dt * decay);
+    if (!canSeePolice && heat.stars > 0 && now - heat.lastCrime > 3) {
       heat.search = Math.min(12, heat.search + dt);
-      if (heat.search > 10) heat.value = Math.max(0, heat.value - dt * 20);
+    } else if (canSeePolice) {
+      heat.search = 0;
     }
     const thresholds = [0, 30, 80, 150, 260, 380];
     let s = 0;

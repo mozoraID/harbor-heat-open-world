@@ -50,11 +50,17 @@ export function injectMenuStyles() {
     .hh-tabs { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
     .hh-tab { padding:8px 14px; border-radius:8px; background:rgba(255,255,255,0.06); cursor:pointer; font-weight:800; letter-spacing:1px; text-transform:uppercase; font-size:13px; }
     .hh-tab.active { background:#ff6b5a; color:#fff; }
-    .hh-tab-content { flex:1; min-height:0; overflow:auto; background:rgba(14,18,32,0.72); border-radius:10px; padding:14px; border:1px solid rgba(255,255,255,0.08); }
-    .hh-map-canvas { width:100%; height:520px; max-height:60vh; background:#0f1822; border-radius:8px; display:block; }
-    .hh-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; font-size:12px; color:#d7deea; }
-    .hh-legend span::before { content:''; display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
-    .hh-leg-mission::before { background:#ffcc4d; } .hh-leg-safe::before { background:#3ee6b0; } .hh-leg-shop::before { background:#5cc8ff; } .hh-leg-district::before { background:#889; border-radius:2px; }
+    .hh-tab-content { flex:1; min-height:0; overflow:hidden; background:rgba(14,18,32,0.72); border-radius:10px; padding:14px; border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; }
+    .hh-tab-content.scroll { overflow:auto; display:block; }
+    .hh-map-layout { flex:1; min-height:0; display:flex; gap:14px; }
+    .hh-map-wrap { flex:1; min-width:0; min-height:0; display:flex; align-items:center; justify-content:center; }
+    .hh-map-canvas { background:#0f1822; border-radius:8px; display:block; max-width:100%; max-height:100%; }
+    .hh-map-side { width:260px; flex:0 0 260px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+    .hh-side-card { background:rgba(255,255,255,0.05); border-radius:8px; padding:10px; border-left:3px solid #5cc8ff; }
+    .hh-side-title { font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:#5cc8ff; margin-bottom:6px; }
+    .hh-legend { display:flex; flex-direction:column; gap:8px; font-size:12px; color:#d7deea; }
+    .hh-legend span::before { content:''; display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:middle; }
+    .hh-leg-mission::before { background:#ffcc4d; } .hh-leg-safe::before { background:#3ee6b0; } .hh-leg-shop::before { background:#5cc8ff; } .hh-leg-player::before { background:#ffffff; } .hh-leg-beach::before { background:#e8c98a; border-radius:2px; } .hh-leg-ocean::before { background:#2f88a8; border-radius:2px; }
     .hh-list { display:flex; flex-direction:column; gap:10px; }
     .hh-act { font-size:14px; color:#5cc8ff; letter-spacing:1.4px; text-transform:uppercase; margin-top:6px; }
     .hh-mission-row { padding:8px 10px; background:rgba(255,255,255,0.04); border-radius:6px; display:flex; justify-content:space-between; }
@@ -72,7 +78,15 @@ export function injectMenuStyles() {
     .hh-phone { width:300px; height:560px; max-height:100%; border-radius:28px; background: linear-gradient(180deg,#0b1220,#121826); border:4px solid #222a38; box-shadow:0 20px 50px rgba(0,0,0,0.6); padding:14px 12px; display:flex; flex-direction:column; }
     .hh-phone-notch { width:120px; height:16px; background:#0a0e16; border-radius:0 0 10px 10px; margin:-14px auto 8px; }
     .hh-phone-screen { flex:1; min-height:0; border-radius:16px; overflow:hidden; background: linear-gradient(160deg,#ff8a5b 0%,#6b2cff 50%,#1b3b6f 100%); position:relative; display:flex; flex-direction:column; }
-    .hh-phone-home { padding:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-content:start; }
+    .hh-phone-home { padding:8px 12px 12px; display:flex; flex-direction:column; gap:10px; height:100%; overflow:auto; }
+    .hh-phone-status { display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:800; padding:0 2px; opacity:0.95; }
+    .hh-phone-clock { text-align:center; margin-top:6px; }
+    .hh-phone-clock .time { font-size:42px; font-weight:900; line-height:1; letter-spacing:1px; }
+    .hh-phone-clock .date { font-size:12px; font-weight:700; color:#f3e7ff; margin-top:2px; text-transform:uppercase; letter-spacing:1px; }
+    .hh-phone-notif { background:rgba(10,14,22,0.55); backdrop-filter: blur(4px); border-radius:12px; padding:10px 12px; border-left:3px solid #ffcc4d; font-size:12px; }
+    .hh-phone-notif .from { font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:#ffcc4d; font-weight:900; }
+    .hh-phone-notif .msg { margin-top:3px; color:#fff; font-weight:700; line-height:1.3; }
+    .hh-app-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-content:start; margin-top:auto; }
     .hh-app { background:rgba(0,0,0,0.25); border-radius:14px; padding:10px 6px; text-align:center; cursor:pointer; font-size:11px; font-weight:800; backdrop-filter: blur(2px); }
     .hh-app-icon { font-size:22px; margin-bottom:4px; }
     .hh-phone-appview { position:absolute; inset:0; background:rgba(10,14,22,0.96); display:flex; flex-direction:column; }

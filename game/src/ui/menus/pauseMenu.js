@@ -48,37 +48,155 @@ export function createPauseMenu(rootEl, callbacks = {}) {
   function rect(r){ if(!r) return {x:0,z:0,w:0,h:0}; if(r.w!=null) return {x:r.x||0,z:r.z||0,w:r.w,h:r.h??r.d??r.w}; if(r.width!=null) return {x:r.x||0,z:r.z||0,w:r.width,h:r.height??r.depth??r.width}; if(r.x1!=null) return {x:(r.x1+r.x2)/2,z:(r.z1+r.z2)/2,w:Math.abs(r.x2-r.x1),h:Math.abs(r.z2-r.z1)}; const s=r.size??20; return {x:r.x||0,z:r.z||0,w:s,h:s}; }
 
   function renderMap() {
-    content.innerHTML = `<canvas class="hh-map-canvas" data-map width="1200" height="520"></canvas>
-      <div class="hh-legend"><span class="hh-leg-mission">Mission Markers</span><span class="hh-leg-safe">Safehouses</span><span class="hh-leg-shop">Shops</span><span class="hh-leg-district">Districts / Roads</span></div>`;
+    const objective = lastState.mission?.objective || lastState.hud?.objective || lastState.currentObjective || 'Explore Port Solenne.';
+    content.innerHTML = `
+      <div class="hh-map-layout">
+        <div class="hh-map-wrap"><canvas class="hh-map-canvas" data-map></canvas></div>
+        <div class="hh-map-side">
+          <div class="hh-side-card">
+            <div class="hh-side-title">Legend</div>
+            <div class="hh-legend">
+              <span class="hh-leg-mission">Mission Markers</span>
+              <span class="hh-leg-player">You (Arrow)</span>
+              <span class="hh-leg-safe">Safehouses</span>
+              <span class="hh-leg-shop">Shops</span>
+              <span class="hh-leg-beach">Beach / Coastline</span>
+              <span class="hh-leg-ocean">Ocean (East)</span>
+            </div>
+          </div>
+          <div class="hh-side-card" style="border-left-color:#ffcc4d;">
+            <div class="hh-side-title" style="color:#ffcc4d;">Current Objective</div>
+            <div style="font-size:14px;line-height:1.4;color:#f4f7fb;">${String(objective).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
+          </div>
+          <div class="hh-side-card" style="border-left-color:#3ee6b0;">
+            <div class="hh-side-title" style="color:#3ee6b0;">Districts</div>
+            <div class="hh-muted" style="font-size:12px;line-height:1.5;">Marigold Beach<br>Old Pier<br>Glasswater Heights<br>Ferro Docks<br>Cinder Hills<br>Lagoon Bridge</div>
+          </div>
+        </div>
+      </div>`;
+    const wrap = content.querySelector('.hh-map-wrap');
     const canvas = content.querySelector('[data-map]');
     const ctx = canvas.getContext('2d');
-    const w = canvas.width, h = canvas.height;
-    ctx.fillStyle = '#14202b'; ctx.fillRect(0,0,w,h);
+    const rectW = wrap.clientWidth || 800;
+    const rectH = wrap.clientHeight || 520;
+
+    // world bounds from map data (roads/blocks/water)
     const items = [...(mapData.water||[]), ...(mapData.blocks||[]), ...(mapData.roads||[])];
     let minx=Infinity,maxx=-Infinity,minz=Infinity,maxz=-Infinity;
     for (const it of items){ const rc=rect(it); minx=Math.min(minx,rc.x-rc.w/2); maxx=Math.max(maxx,rc.x+rc.w/2); minz=Math.min(minz,rc.z-rc.h/2); maxz=Math.max(maxz,rc.z+rc.h/2); }
-    if (!isFinite(minx)) { minx=-400; maxx=400; minz=-400; maxz=400; }
-    const pad=40; const sx=(w-pad*2)/Math.max(1,maxx-minx); const sz=(h-pad*2)/Math.max(1,maxz-minz); const sc=Math.min(sx,sz);
-    const tx = (x)=> pad + (x-minx)*sc; const tz=(z)=> pad + (z-minz)*sc;
-    ctx.fillStyle='#1f4f7a'; for(const it of (mapData.water||[])){ const r=rect(it); ctx.fillRect(tx(r.x-r.w/2), tz(r.z-r.h/2), r.w*sc, r.h*sc); }
-    ctx.fillStyle='#263445'; ctx.strokeStyle='#33465a'; for(const it of (mapData.blocks||[])){ const r=rect(it); ctx.fillRect(tx(r.x-r.w/2), tz(r.z-r.h/2), r.w*sc, r.h*sc); ctx.strokeRect(tx(r.x-r.w/2), tz(r.z-r.h/2), r.w*sc, r.h*sc); }
-    ctx.fillStyle='#4a5666'; for(const it of (mapData.roads||[])){ const r=rect(it); ctx.fillRect(tx(r.x-r.w/2), tz(r.z-r.h/2), r.w*sc, r.h*sc); }
-    // districts labels
-    const districts = lastState.districts || [
-      {name:'Marigold Beach',x:0,z:0},{name:'Coral Quay',x:150,z:-120},{name:'Salt Docks',x:-160,z:120},{name:'Old Span',x:120,z:140},{name:'Verdant Hills',x:-140,z:-140}
+    if (!isFinite(minx)) { minx=-355; maxx=355; minz=-355; maxz=650; }
+    // Rotate map so world +Z (south/beach/ocean) appears on east (right) side: map world Z -> canvas X, world X -> canvas Y
+    const worldW = maxz - minz;
+    const worldH = maxx - minx;
+    const pad = 28;
+    const sc = Math.min((rectW - pad*2) / Math.max(1, worldW), (rectH - pad*2) / Math.max(1, worldH));
+    const drawW = worldW * sc + pad*2;
+    const drawH = worldH * sc + pad*2;
+    canvas.width = Math.max(200, Math.floor(drawW));
+    canvas.height = Math.max(200, Math.floor(drawH));
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+    const w = canvas.width, h = canvas.height;
+    const tx = (z)=> pad + (z - minz) * sc; // world z -> canvas x (east)
+    const ty = (x)=> pad + (maxx - x) * sc; // world x -> canvas y (north up-ish)
+
+    ctx.fillStyle = '#13202b'; ctx.fillRect(0,0,w,h);
+
+    // ocean on east side
+    for (const it of (mapData.water||[])) {
+      const r = rect(it);
+      ctx.fillStyle = '#2f88a8';
+      ctx.fillRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
+    }
+    // beach band near coastline (east side of land, high world z)
+    ctx.fillStyle = '#e8c98a';
+    for (const it of (mapData.blocks||[])) {
+      const r = rect(it);
+      if (r.z > maxz - 420) { // southern/beach-side blocks
+        ctx.fillRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
+      }
+    }
+    // coastline stroke
+    ctx.strokeStyle = 'rgba(255,245,220,0.7)'; ctx.lineWidth = 2;
+    const coastZ = (mapData.water && mapData.water[0]) ? (rect(mapData.water[0]).z - rect(mapData.water[0]).h/2) : (maxz - 260);
+    ctx.beginPath(); ctx.moveTo(tx(coastZ), pad); ctx.lineTo(tx(coastZ), h-pad); ctx.stroke();
+
+    // roads
+    ctx.fillStyle = '#4a5666';
+    for (const it of (mapData.roads||[])) {
+      const r = rect(it);
+      ctx.fillRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
+    }
+    // blocks overlay (non-beach tint/detail)
+    ctx.strokeStyle = 'rgba(70,90,110,0.55)'; ctx.lineWidth = 1;
+    for (const it of (mapData.blocks||[])) {
+      const r = rect(it);
+      const bx = tx(r.z - r.h/2), by = ty(r.x + r.w/2), bw = r.h*sc, bh = r.w*sc;
+      if (r.z <= maxz - 420) { ctx.fillStyle = 'rgba(38,52,69,0.55)'; ctx.fillRect(bx,by,bw,bh); }
+      ctx.strokeRect(bx,by,bw,bh);
+    }
+
+    // district labels (real districts from layout.js)
+    const defaultDistricts = [
+      { name:'Marigold Beach', x:0, z:319 },
+      { name:'Old Pier', x:-261, z:261 },
+      { name:'Lagoon Bridge', x:0, z:174 },
+      { name:'Ferro Docks', x:-203, z:-203 },
+      { name:'Cinder Hills', x:145, z:-145 },
+      { name:'Glasswater Heights', x:145, z:29 },
     ];
-    ctx.fillStyle='#c9d3df'; ctx.font='700 14px "Segoe UI", Arial'; ctx.textAlign='center';
-    for(const d of districts){ if(d.x==null) continue; ctx.fillText(String(d.name||'').toUpperCase(), tx(d.x), tz(d.z)); }
+    const districts = (Array.isArray(lastState.districts) && lastState.districts.length) ? lastState.districts : defaultDistricts;
+    ctx.font = '800 13px "Segoe UI", Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const d of districts) {
+      if (d.x == null || d.z == null) continue;
+      ctx.fillStyle = 'rgba(8,12,18,0.55)';
+      const label = String(d.name||'').toUpperCase();
+      const tw = ctx.measureText(label).width;
+      ctx.fillRect(tx(d.z)-tw/2-4, ty(d.x)-9, tw+8, 18);
+      ctx.fillStyle = '#e8eef7';
+      ctx.fillText(label, tx(d.z), ty(d.x));
+    }
+
     // markers
     const mm = lastState.mapMarkers || {};
-    const missions = mm.missions || (lastState.minimap?.target ? [lastState.minimap.target] : [{x:140,z:-120}]);
-    ctx.fillStyle='#ffcc4d'; for(const m of missions){ if(m.x==null) continue; ctx.beginPath(); ctx.arc(tx(m.x), tz(m.z),6,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#111'; ctx.fillRect(tx(m.x)-2,tz(m.z)-10,4,6); ctx.fillStyle='#ffcc4d'; }
-    const safe = mm.safehouses || [{x:-80,z:60,name:'Safehouse'}];
-    ctx.fillStyle='#3ee6b0'; for(const s of safe){ if(s.x==null) continue; ctx.fillRect(tx(s.x)-5,tz(s.z)-5,10,10); }
-    const shops = mm.shops || lastState.minimap?.shops || [{x:90,z:80,letter:'G'},{x:-60,z:40,letter:'A'}];
-    ctx.fillStyle='#5cc8ff'; ctx.font='900 13px "Segoe UI", Arial'; for(const s of shops){ if(s.x==null) continue; ctx.beginPath(); ctx.arc(tx(s.x),tz(s.z),7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#081018'; ctx.fillText(String(s.letter||'S'), tx(s.x), tz(s.z)+4); ctx.fillStyle='#5cc8ff'; }
-    // player
-    if (lastState.player){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(tx(lastState.player.x||0), tz(lastState.player.z||0),5,0,Math.PI*2); ctx.fill(); }
+    let missions = mm.missions;
+    if (!Array.isArray(missions) || !missions.length) {
+      missions = lastState.minimap?.target ? [{ ...lastState.minimap.target, num: 1 }] : [];
+    }
+    missions.forEach((m, i) => {
+      if (m.x == null || m.z == null) return;
+      const mx = tx(m.z), my = ty(m.x);
+      ctx.fillStyle = '#ffcc4d'; ctx.beginPath(); ctx.arc(mx, my, 10, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#111'; ctx.font = '900 11px "Segoe UI", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(m.num ?? m.number ?? (i+1)), mx, my+0.5);
+    });
+
+    const safe = mm.safehouses || [];
+    for (const s of safe) {
+      if (s.x == null || s.z == null) continue;
+      ctx.fillStyle = '#3ee6b0'; ctx.fillRect(tx(s.z)-6, ty(s.x)-6, 12, 12);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.strokeRect(tx(s.z)-6, ty(s.x)-6, 12, 12);
+    }
+    const shops = mm.shops || lastState.minimap?.shops || [];
+    ctx.font='900 12px "Segoe UI", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for (const s of shops) {
+      if (s.x == null || s.z == null) continue;
+      ctx.fillStyle='#5cc8ff'; ctx.beginPath(); ctx.arc(tx(s.z), ty(s.x), 8, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle='#081018'; ctx.fillText(String(s.letter||s.label||'S'), tx(s.z), ty(s.x)+0.5);
+    }
+
+    // player arrow
+    if (lastState.player) {
+      const px = tx(lastState.player.z || 0), py = ty(lastState.player.x || 0);
+      const yaw = lastState.player.yaw ?? 0;
+      // world forward (sin yaw, cos yaw) mapped: screen dx = cos yaw (z), screen dy = -sin yaw (since ty inverts x)
+      const ang = Math.atan2(-Math.sin(yaw), Math.cos(yaw));
+      ctx.save(); ctx.translate(px, py); ctx.rotate(ang - Math.PI/2);
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(7, 8); ctx.lineTo(0, 4); ctx.lineTo(-7, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
   }
 
   function renderMissions() {
@@ -155,6 +273,7 @@ export function createPauseMenu(rootEl, callbacks = {}) {
   }
 
   function render() {
+    content.classList.toggle('scroll', active !== 'map');
     if (active === 'map') renderMap();
     else if (active === 'missions') renderMissions();
     else if (active === 'stats') renderStats();

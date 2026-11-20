@@ -59,7 +59,8 @@ export function updateVehicleActions(dt, state, scene) {
         car.driver = 'player';
         p.inCar = car;
         state.car = car;
-        state.player.wanted = Math.min(5, Math.max(1, state.player.wanted));
+        if (state.police && state.police.reportCrime) state.police.reportCrime('steal', state.time);
+        else state.player.wanted = Math.min(5, Math.max(1, state.player.wanted));
         state.hud.objective = 'Stole ' + car.name + '. Drive!';
       }
       p.action = null; p.actionTarget = null;
