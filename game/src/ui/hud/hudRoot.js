@@ -64,8 +64,9 @@ export function createHudSystem(rootEl) {
   }
 
   function setMapData(data) { minimap.setMapData(data); }
+  function setPhoneOpen(open) { root.classList.toggle('hh-phone-open', !!open); }
   function show() { root.style.display = 'block'; }
   function hide() { root.style.display = 'none'; }
 
-  return { update, setMapData, show, hide, el: root };
+  return { update, setMapData, setPhoneOpen, show, hide, el: root };
 }

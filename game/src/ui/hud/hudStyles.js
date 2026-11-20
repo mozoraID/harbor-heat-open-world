@@ -141,6 +141,10 @@ export function injectHudStyles() {
     .hh-crosshair:after { top:8px; left:0; width:18px; height:2px; }
     .hh-interact { padding:8px 14px; font-size:14px; font-weight:900; display:flex; gap:8px; align-items:center; }
     .hh-key { background:#ffcc4d; color:#111; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:900; }
+    .hh-hud.hh-phone-open .hh-top-right,
+    .hh-hud.hh-phone-open .hh-bottom-right,
+    .hh-hud.hh-phone-open .hh-bottom-center,
+    .hh-hud.hh-phone-open .hh-notifs { display:none; }
     .hh-hidden { display:none !important; }
   `;
   document.head.appendChild(style);

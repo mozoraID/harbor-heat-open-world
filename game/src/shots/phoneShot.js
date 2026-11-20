@@ -44,9 +44,10 @@ export function stagePhoneShot({ app, state, hud, player }) {
     radio: { station: 'WAVE 101.7', genre: 'Coastline Pop', track: 'Sunset Run' },
     phoneNotification: { from: 'Sasha Lune', text: "Kade is moving product tonight at Ferro Docks. You in?" },
   });
-  // open Messages thread
+  // open Messages thread; clear the right-hand HUD so the phone does not overlap it
   const msgApp = phone.el.querySelector('[data-app="messages"]');
   if (msgApp) msgApp.click();
+  hud.setPhoneOpen(true);
 
   // warm evening ambience
   if (app.scene.fog) { app.scene.fog.color.setHex(0x7a5a6a); app.scene.fog.near = 40; app.scene.fog.far = 420; }

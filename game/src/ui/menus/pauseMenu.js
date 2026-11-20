@@ -1,7 +1,9 @@
 // Pause menu: MAP, MISSIONS, STATS, SETTINGS, SAVE tabs.
 import { injectMenuStyles } from './menuStyles.js';
-import { listSlots, slotSummary } from '../../save/saveSlots.js';
+import { listSlots, slotDetails } from '../../save/saveSlots.js';
 import { loadSettings, saveSettings } from '../../save/settings.js';
+import { WORLD, DISTRICTS } from '../../core/constants.js';
+import { districtFor } from '../../world/layout.js';
 
 function fmtTime(sec){ const s=Math.max(0,Math.floor(Number(sec)||0)); const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); return h?`${h}h ${m}m`:`${m}m`; }
 function fmtMoney(n){ return 'S$ ' + (Math.floor(Number(n)||0)).toLocaleString('en-US'); }
@@ -80,109 +82,143 @@ export function createPauseMenu(rootEl, callbacks = {}) {
     const rectW = wrap.clientWidth || 800;
     const rectH = wrap.clientHeight || 520;
 
-    // world bounds from map data (roads/blocks/water)
-    const items = [...(mapData.water||[]), ...(mapData.blocks||[]), ...(mapData.roads||[])];
+    // Fit the city grid plus shoreline to the panel; the ocean itself extends to the panel edges.
+    const land = [...(mapData.blocks||[]), ...(mapData.roads||[])];
     let minx=Infinity,maxx=-Infinity,minz=Infinity,maxz=-Infinity;
-    for (const it of items){ const rc=rect(it); minx=Math.min(minx,rc.x-rc.w/2); maxx=Math.max(maxx,rc.x+rc.w/2); minz=Math.min(minz,rc.z-rc.h/2); maxz=Math.max(maxz,rc.z+rc.h/2); }
-    if (!isFinite(minx)) { minx=-355; maxx=355; minz=-355; maxz=650; }
-    // Rotate map so world +Z (south/beach/ocean) appears on east (right) side: map world Z -> canvas X, world X -> canvas Y
-    const worldW = maxz - minz;
+    for (const it of land){ const rc=rect(it); minx=Math.min(minx,rc.x-rc.w/2); maxx=Math.max(maxx,rc.x+rc.w/2); minz=Math.min(minz,rc.z-rc.h/2); maxz=Math.max(maxz,rc.z+rc.h/2); }
+    if (!isFinite(minx)) { minx=-355; maxx=355; minz=-355; maxz=355; }
+    const water0 = rect((mapData.water||[])[0]);
+    const coastZ = (mapData.water||[]).length ? water0.z - water0.h/2 : maxz + WORLD.roadWidth * 2.5;
+    const viewMinZ = minz - 25;
+    const viewMaxZ = Math.max(coastZ, maxz) + 20;
     const worldH = maxx - minx;
-    const sc = Math.min(rectW / Math.max(1, worldW), rectH / Math.max(1, worldH)) * 0.95;
-    const ox = (rectW - worldW * sc) / 2;
-    const oy = (rectH - worldH * sc) / 2;
+    // Rotate: world +Z (beach/ocean) is canvas +X, world +X is canvas -Y.
+    const sc = Math.min((rectW - 24) / Math.max(1, viewMaxZ - viewMinZ), (rectH - 20) / Math.max(1, worldH));
+    const left = 12;
+    const top = Math.max(10, (rectH - worldH * sc) / 2);
     canvas.width = Math.max(200, Math.floor(rectW));
     canvas.height = Math.max(200, Math.floor(rectH));
     canvas.style.width = canvas.width + 'px';
     canvas.style.height = canvas.height + 'px';
     const w = canvas.width, h = canvas.height;
-    const tx = (z)=> ox + (z - minz) * sc; // world z -> canvas x (east)
-    const ty = (x)=> oy + (maxx - x) * sc; // world x -> canvas y (north up-ish)
+    const tx = (z)=> left + (z - viewMinZ) * sc;
+    const ty = (x)=> top + (maxx - x) * sc;
 
     ctx.fillStyle = '#13202b'; ctx.fillRect(0,0,w,h);
 
-    // ocean on east side
-    for (const it of (mapData.water||[])) {
+    // Ocean fills everything seaward of the coastline, right out to the panel edges.
+    const coastX = tx(coastZ);
+    const oceanGrad = ctx.createLinearGradient(coastX, 0, w, 0);
+    oceanGrad.addColorStop(0, '#3aa6bf');
+    oceanGrad.addColorStop(0.4, '#2f88a8');
+    oceanGrad.addColorStop(1, '#1d4f70');
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(coastX, 0, Math.max(0, w - coastX), h);
+    for (const it of (mapData.water||[]).slice(1)) {
       const r = rect(it);
       ctx.fillStyle = '#2f88a8';
       ctx.fillRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
     }
-    // beach band near coastline (east side of land, high world z)
+    ctx.strokeStyle = 'rgba(255,255,255,0.09)'; ctx.lineWidth = 1;
+    for (let y = 12, k = 0; y < h; y += 24, k++) {
+      ctx.beginPath();
+      ctx.moveTo(coastX + 14 + (k % 2) * 16, y);
+      ctx.lineTo(w - 8, y);
+      ctx.stroke();
+    }
+
+    // Sand strip between the city edge and the shoreline.
+    const beachX = tx(maxz);
     ctx.fillStyle = '#e8c98a';
-    for (const it of (mapData.blocks||[])) {
-      const r = rect(it);
-      if (r.z > maxz - 420) { // southern/beach-side blocks
-        ctx.fillRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
+    ctx.fillRect(beachX, 0, Math.max(0, coastX - beachX), h);
+    ctx.strokeStyle = 'rgba(255,248,225,0.9)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(coastX, 0); ctx.lineTo(coastX, h); ctx.stroke();
+
+    // Subtle district tints from the real layout district assignment.
+    const cell = WORLD.blockSize + WORLD.roadWidth;
+    const tints = {
+      'Marigold Beach': 'rgba(232,201,138,0.22)',
+      'Old Pier': 'rgba(92,200,255,0.16)',
+      'Lagoon Bridge': 'rgba(140,180,255,0.14)',
+      'Ferro Docks': 'rgba(62,230,176,0.14)',
+      'Cinder Hills': 'rgba(255,150,90,0.13)',
+      'Glasswater Heights': 'rgba(170,120,235,0.20)',
+    };
+    for (let j = 0; j < WORLD.grid; j++) {
+      for (let i = 0; i < WORLD.grid; i++) {
+        const name = DISTRICTS[districtFor(i, j)] || '';
+        const bx = tx(minz + WORLD.roadWidth + j * cell);
+        const by = ty(minx + WORLD.roadWidth + (i + 1) * cell);
+        const bs = WORLD.blockSize * sc;
+        ctx.fillStyle = tints[name] || 'rgba(255,255,255,0.05)';
+        ctx.fillRect(bx, by, bs, bs);
       }
     }
-    // coastline stroke
-    ctx.strokeStyle = 'rgba(255,245,220,0.7)'; ctx.lineWidth = 2;
-    const coastZ = (mapData.water && mapData.water[0]) ? (rect(mapData.water[0]).z - rect(mapData.water[0]).h/2) : (maxz - 260);
-    ctx.beginPath(); ctx.moveTo(tx(coastZ), 0); ctx.lineTo(tx(coastZ), h); ctx.stroke();
 
-    // roads
+    // Roads, then block outlines on top so the grid stays legible.
     ctx.fillStyle = '#4a5666';
     for (const it of (mapData.roads||[])) {
       const r = rect(it);
       ctx.fillRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
     }
-    // blocks overlay (non-beach tint/detail)
-    ctx.strokeStyle = 'rgba(70,90,110,0.55)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(10,18,28,0.5)'; ctx.lineWidth = 1;
     for (const it of (mapData.blocks||[])) {
       const r = rect(it);
-      const bx = tx(r.z - r.h/2), by = ty(r.x + r.w/2), bw = r.h*sc, bh = r.w*sc;
-      if (r.z <= maxz - 420) { ctx.fillStyle = 'rgba(38,52,69,0.55)'; ctx.fillRect(bx,by,bw,bh); }
-      ctx.strokeRect(bx,by,bw,bh);
+      ctx.strokeRect(tx(r.z - r.h/2), ty(r.x + r.w/2), r.h*sc, r.w*sc);
     }
 
-    // district labels computed from real layout logic (layout.js/mapData.js)
-    function districtCenters() {
-      const n=12, blockSize=44, roadWidth=14, cell=58, offsetX=-355, offsetZ=-355;
-      function districtFor(i,j){
-        if (j >= n - 2) return 'Marigold Beach';
-        if (j >= n - 3 && i <= 2) return 'Old Pier';
-        if (i >= 4 && i <= 7 && j >= n - 4 && j <= n - 3) return 'Lagoon Bridge';
-        if (i <= 2 && j >= n - 4) return 'Old Pier';
-        if (i >= 8 && j <= 4) return 'Cinder Hills';
-        if (i >= 7 && j >= 5 && j <= 8) return 'Glasswater Heights';
-        if (i <= 3 && j <= 4) return 'Ferro Docks';
-        if (j <= 2) return 'Ferro Docks';
-        if (i >= 5) return 'Glasswater Heights';
-        return 'Cinder Hills';
-      }
-      const acc={};
-      for(let j=0;j<n;j++) for(let i=0;i<n;i++){
-        const name=districtFor(i,j); const x=offsetX+roadWidth+i*cell+blockSize/2; const z=offsetZ+roadWidth+j*cell+blockSize/2;
-        const a=(acc[name]||(acc[name]={x:0,z:0,c:0})); a.x+=x; a.z+=z; a.c++;
-      }
-      return Object.entries(acc).map(([name,v])=>({name,x:v.x/v.c,z:v.z/v.c}));
-    }
-    const districts = (Array.isArray(lastState.districts) && lastState.districts.length) ? lastState.districts : districtCenters();
-    ctx.font = '800 13px "Segoe UI", Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const d of districts) {
-      if (d.x == null || d.z == null) continue;
-      ctx.fillStyle = 'rgba(8,12,18,0.55)';
-      const label = String(d.name||'').toUpperCase();
-      const tw = ctx.measureText(label).width;
-      ctx.fillRect(tx(d.z)-tw/2-4, ty(d.x)-9, tw+8, 18);
-      ctx.fillStyle = '#e8eef7';
-      ctx.fillText(label, tx(d.z), ty(d.x));
-    }
-
-    // markers
+    // Marker positions are needed up front so district labels can be offset away from them.
     const mm = lastState.mapMarkers || {};
     let missions = mm.missions;
     if (!Array.isArray(missions) || !missions.length) {
       missions = lastState.minimap?.target ? [{ ...lastState.minimap.target, num: 1 }] : [];
     }
-    missions.forEach((m, i) => {
-      if (m.x == null || m.z == null) return;
-      const mx = tx(m.z), my = ty(m.x);
+    const missionPts = missions.filter(m => m && m.x != null && m.z != null).map((m, i) => ({ x: tx(m.z), y: ty(m.x), m, i }));
+
+    // district labels computed from the real layout logic (layout.js)
+    function districtCenters() {
+      const acc={};
+      for(let j=0;j<WORLD.grid;j++) for(let i=0;i<WORLD.grid;i++){
+        const name=DISTRICTS[districtFor(i,j)] || districtFor(i,j);
+        const x=minx+WORLD.roadWidth+i*cell+WORLD.blockSize/2;
+        const z=minz+WORLD.roadWidth+j*cell+WORLD.blockSize/2;
+        const a=(acc[name]||(acc[name]={x:0,z:0,c:0})); a.x+=x; a.z+=z; a.c++;
+      }
+      return Object.entries(acc).map(([name,v])=>({name,x:v.x/v.c,z:v.z/v.c}));
+    }
+    const districts = (Array.isArray(lastState.districts) && lastState.districts.length) ? lastState.districts : districtCenters();
+    ctx.font = '800 12px "Segoe UI", Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const d of districts) {
+      if (d.x == null || d.z == null) continue;
+      const label = String(d.name||'').toUpperCase();
+      const tw = ctx.measureText(label).width;
+      const bx = tx(d.z), by = ty(d.x);
+      let best = null;
+      for (const [dx, dy] of [[0,-17],[0,17],[-22,-17],[22,-17],[-22,17],[22,17],[0,-36],[0,36]]) {
+        const cx = bx + dx, cy = by + dy;
+        let hits = 0;
+        for (const p of missionPts) {
+          const nx = Math.max(cx - tw/2 - 6, Math.min(p.x, cx + tw/2 + 6));
+          const ny = Math.max(cy - 9, Math.min(p.y, cy + 9));
+          if ((p.x-nx)*(p.x-nx) + (p.y-ny)*(p.y-ny) < 196) hits++;
+        }
+        if (!best || hits < best.hits) best = { cx, cy, hits };
+        if (!hits) break;
+      }
+      ctx.fillStyle = 'rgba(5,9,16,0.85)';
+      ctx.fillRect(best.cx - tw/2 - 5, best.cy - 9, tw + 10, 18);
+      ctx.strokeStyle = 'rgba(92,200,255,0.28)'; ctx.lineWidth = 1;
+      ctx.strokeRect(best.cx - tw/2 - 5, best.cy - 9, tw + 10, 18);
+      ctx.fillStyle = '#e8eef7';
+      ctx.fillText(label, best.cx, best.cy);
+    }
+
+    for (const { x: mx, y: my, m, i } of missionPts) {
       ctx.fillStyle = '#ffcc4d'; ctx.beginPath(); ctx.arc(mx, my, 10, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
       ctx.fillStyle = '#111'; ctx.font = '900 11px "Segoe UI", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(String(m.num ?? m.number ?? (i+1)), mx, my+0.5);
-    });
+    }
 
     const safe = mm.safehouses || [];
     for (const s of safe) {
@@ -275,10 +311,9 @@ export function createPauseMenu(rootEl, callbacks = {}) {
     content.innerHTML = `<div class="hh-save-slots"></div><div class="hh-muted" style="margin-top:10px;font-size:12px;">Select a slot to save your current progress.</div>`;
     const wrap = content.querySelector('.hh-save-slots');
     for (const entry of slots) {
-      const s = slotSummary(entry.data);
       const card = document.createElement('div');
-      card.className = 'hh-slot';
-      card.innerHTML = s ? `<div class="hh-slot-title">Slot ${entry.slot}</div><div class="hh-slot-meta">${s.missionPercent}% · ${fmtMoney(s.money)} · ${fmtTime(s.playTime)}</div>` : `<div class="hh-slot-title">Slot ${entry.slot}</div><div class="hh-muted">Empty Slot</div>`;
+      card.className = 'hh-save-card';
+      card.innerHTML = `<div class="hh-save-detail">${slotDetails(entry)}</div>`;
       card.addEventListener('click', () => { callbacks.onSaveSlot && callbacks.onSaveSlot(entry.slot); renderSave(); });
       wrap.appendChild(card);
     }

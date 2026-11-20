@@ -1,14 +1,6 @@
 // Title screen: logo, tagline, main menu with continue/new/load/settings/controls/credits over live 3D backdrop.
 import { injectMenuStyles } from './menuStyles.js';
-import { listSlots, slotSummary } from '../../save/saveSlots.js';
-
-function fmtTime(sec) {
-  const s = Math.max(0, Math.floor(Number(sec) || 0));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
-function fmtMoney(n) { return 'S$ ' + (Math.floor(Number(n) || 0)).toLocaleString('en-US'); }
+import { listSlots, slotDetails, slotSummary } from '../../save/saveSlots.js';
 
 export function createTitleScreen(rootEl, callbacks = {}) {
   injectMenuStyles();
@@ -74,14 +66,9 @@ export function createTitleScreen(rootEl, callbacks = {}) {
     for (const entry of slots) {
       const s = slotSummary(entry.data);
       const card = document.createElement('div');
-      card.className = 'hh-slot';
-      if (s) {
-        card.innerHTML = `<div class="hh-slot-title">Slot ${entry.slot}</div>
-          <div class="hh-slot-meta">${s.missionPercent}% Missions · ${fmtMoney(s.money)} · ${fmtTime(s.playTime)}</div>
-          <div class="hh-muted" style="font-size:11px;margin-top:2px">${s.savedAt ? new Date(s.savedAt).toLocaleString() : ''}</div>`;
-      } else {
-        card.innerHTML = `<div class="hh-slot-title">Slot ${entry.slot}</div><div class="hh-muted">Empty Slot</div>`;
-      }
+      card.className = 'hh-save-card';
+      card.innerHTML = `<div class="hh-save-detail">${slotDetails(entry)}</div>
+        <div class="hh-muted hh-save-sub">${s?.savedAt ? `Last saved ${new Date(s.savedAt).toLocaleString()}` : 'No save data yet'}</div>`;
       card.addEventListener('click', () => callbacks.onLoadSlot && callbacks.onLoadSlot(entry.slot, entry.data));
       slotsEl.appendChild(card);
     }

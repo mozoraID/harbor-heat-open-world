@@ -63,7 +63,8 @@ export function createGameFlow(ctx = {}) {
 
   // Phone
   const phone = createPhone(uiRoot, {
-    onClose: () => closePhone(),
+    onOpen: () => { showHud(true); hud?.setPhoneOpen(true); },
+    onClose: () => { hud?.setPhoneOpen(false); closePhone(); },
     onCall: (id) => { if (!state.notifications) state.notifications = []; state.notifications.push({ text: `Calling ${id}...`, tone: 'gold' }); },
     onRadioOpen: () => {},
   });
@@ -180,6 +181,7 @@ export function createGameFlow(ctx = {}) {
     showHud(true);
     closePause(true);
     closePhone(true);
+    hud?.setPhoneOpen(false);
     setMode('play');
     overlay = null;
   }
@@ -187,7 +189,7 @@ export function createGameFlow(ctx = {}) {
   function goToTitle() {
     overlay = null;
     wasted.hide(); busted.hide(); missionPassed.hide();
-    closePause(true); closePhone(true);
+    closePause(true); closePhone(true); hud?.setPhoneOpen(false);
     showHud(false);
     title.show();
     checklist.show();

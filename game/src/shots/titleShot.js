@@ -11,9 +11,9 @@ export function stageTitleShot({ app, state, hud, player }) {
   state.districtName = 'Marigold Beach';
 
   const filledSlots = () => ([
-    { slot: 1, data: { missionPercent: 38, money: 18450, playTime: 4 * 3600 + 12 * 60, savedAt: '2026-11-18T20:14:00.000Z', rank: 'Wheelman', completedMissions: [] } },
-    { slot: 2, data: { missionPercent: 62, money: 42100, playTime: 7 * 3600 + 48 * 60, savedAt: '2026-11-19T22:05:00.000Z', rank: 'Fixer', completedMissions: [] } },
-    { slot: 3, data: { missionPercent: 15, money: 6200, playTime: 1 * 3600 + 35 * 60, savedAt: '2026-11-20T18:30:00.000Z', rank: 'Runner', completedMissions: [] } },
+    { slot: 1, data: { missionPercent: 38, money: 18450, playTime: 4 * 3600 + 12 * 60, savedAt: '2026-11-18T20:14:00.000Z', rank: 'Wheelman', activeMissionId: 'act2_glasswater_job', completedMissions: ['act1_first_light', 'act1_tide_breaker', 'act1_neon_tides'] } },
+    { slot: 2, data: { missionPercent: 21, money: 6300, playTime: 2 * 3600 + 5 * 60, savedAt: '2026-11-19T22:05:00.000Z', rank: 'Runner', activeMissionId: 'act1_neon_tides', completedMissions: ['act1_first_light', 'act1_tide_breaker'] } },
+    { slot: 3, data: { missionPercent: 9, money: 1240, playTime: 48 * 60, savedAt: '2026-11-20T18:30:00.000Z', rank: 'Street Rat', activeMissionId: 'act1_tide_breaker', completedMissions: ['act1_first_light'] } },
   ]);
 
   const title = createTitleScreen(document.body, { getSlots: filledSlots });
@@ -25,6 +25,7 @@ export function stageTitleShot({ app, state, hud, player }) {
   const checklist = createFeatureChecklist(document.body);
   checklist.show();
   checklist.setCompactTitleMode(true);
+  if (new URLSearchParams(location.search).get('debugNoUI') === '1') document.querySelectorAll('.hh-title-screen,.hh-checklist').forEach(e => e.style.display = 'none');
 
   const titleCam = createTitleCamera(app, state);
   titleCam.activate();

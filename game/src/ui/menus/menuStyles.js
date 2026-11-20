@@ -37,10 +37,10 @@ export function injectMenuStyles() {
     .hh-menu-btn:hover, .hh-menu-btn.active { background: rgba(255,107,90,0.18); border-left-color:#ffcc4d; }
     .hh-subpanel { background: rgba(14,18,32,0.78); border-radius:10px; padding:12px; border:1px solid rgba(255,255,255,0.1); }
     .hh-slot-cards { display:flex; flex-direction:column; gap:8px; }
-    .hh-slot { padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); border-left:3px solid #5cc8ff; cursor:pointer; }
-    .hh-slot:hover { background:rgba(92,200,255,0.12); }
-    .hh-slot-title { font-size:13px; letter-spacing:1.2px; text-transform:uppercase; color:#5cc8ff; }
-    .hh-slot-meta { font-size:13px; color:#e8eef7; margin-top:2px; }
+    .hh-save-card { width:100%; padding:10px 12px; border-radius:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-left:3px solid #5cc8ff; cursor:pointer; }
+    .hh-save-card:hover { background:rgba(92,200,255,0.14); border-left-color:#ffcc4d; }
+    .hh-save-detail { font-size:11px; font-weight:800; line-height:1.5; color:#f2f7ff; }
+    .hh-save-sub { font-size:10px; margin-top:3px; }
     .hh-muted { color:#aab6c5; font-weight:700; }
 
     .hh-overlay { position:absolute; inset:0; background: rgba(8,10,16,0.72); backdrop-filter: blur(4px); display:flex; }
