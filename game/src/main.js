@@ -62,6 +62,27 @@ function main() {
     });
   }
 
+  // test hook for headless verification
+  if (!shotOrAuto && params.get('test') === 'newgame') {
+    window.__hh = { state, flow };
+    setTimeout(() => {
+      try {
+        const btn = document.querySelector('.hh-menu-btn[data-action="new"]');
+        if (btn) btn.click();
+      } catch (e) {}
+    }, 1200);
+    setTimeout(() => {
+      try {
+        const mission = state.mission || {};
+        const dlg = state.dialogue || {};
+        const target = state.minimap && state.minimap.target;
+        const info = { ok: !!(mission.title && dlg.visible), title: mission.title || '', stage: mission.stage || 0, objective: mission.objective || '', speaker: dlg.speaker || '', dialogue: dlg.text || '', hasMarker: !!(target && target.x != null), mode: state.mode };
+        document.title = 'NEWGAME ' + JSON.stringify(info);
+        console.log('NEWGAME_RESULT', JSON.stringify(info));
+      } catch (e) { console.log('NEWGAME_ERROR', String(e)); }
+    }, 2600);
+  }
+
   function syncHud(prompt) {
     if (prompt !== undefined) state.interact = prompt || null;
     if (state.player.inCar && state.car) {

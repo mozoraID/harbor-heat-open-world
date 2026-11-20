@@ -5,6 +5,7 @@ import { createGround } from './ground.js';
 import { createBuildings } from './buildings.js';
 import { createProps } from './props.js';
 import { createWater } from './water.js';
+import { addLandmarks } from '../landmarks/index.js';
 
 export function createCity(scene, state) {
   const layout = createLayout(state.rng);
@@ -17,6 +18,7 @@ export function createCity(scene, state) {
   const buildings = createBuildings(scene, layout);
   const props = createProps(scene, layout);
   const water = createWater(scene, layout);
+  const landmarks = addLandmarks(scene, layout, state.rng);
 
   state.colliders = buildings.colliders;
   state.world.blocks = layout.blocks;
@@ -30,9 +32,10 @@ export function createCity(scene, state) {
   };
 
   return {
-    layout, sky, ground, buildings, props, water,
+    layout, sky, ground, buildings, props, water, landmarks,
     update(dt, state) {
       water.update(dt);
+      if (landmarks && landmarks.update) landmarks.update(dt);
       const p = state.player;
       sky.update(dt, { x: p.x, y: p.y, z: p.z });
     },
