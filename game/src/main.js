@@ -16,10 +16,12 @@ import { createPoliceSystem } from './police/dispatch.js';
 import { createCombatSystem } from './combat/weapons.js';
 import { setupShots } from './shots/shotDirector.js';
 import { buildMapData } from './world/mapData.js';
+import { setupAutotest } from './shots/autotest.js';
 
 function main() {
   const params = new URLSearchParams(window.location.search);
   const shotName = params.get('shot');
+  const autotestMode = params.get('autotest') === '1';
   const seed = parseInt(params.get('seed') || '1', 10) || 1;
   const app = createApp(document.getElementById('app'));
   const state = createState(seed);
@@ -38,10 +40,16 @@ function main() {
   const player = createPlayer(app.scene, state);
 
   let shotCtrl = null;
+  let autoCtrl = null;
   if (shotName) {
-    shotCtrl = setupShots(shotName, { app, state, city, player, hud, seed });
+    shotCtrl = setupShots(shotName, { app, state, city, player, hud, seed, input });
   } else {
     state.mode = 'play';
+  }
+  if (autotestMode) {
+    state.mode = 'play';
+    shotCtrl = null;
+    autoCtrl = setupAutotest({ app, state, city, player, hud, input, seed });
   }
 
   function syncHud(prompt) {
@@ -153,6 +161,7 @@ function main() {
     const now = nowMs / 1000;
     if (shotCtrl) { shotCtrl.frame(now); return; }
     const t = clock.tick(now);
+    if (autoCtrl) autoCtrl(now, clock.step);
     for (let i = 0; i < t.steps; i++) simulate(clock.step);
     app.renderer.render(app.scene, app.camera);
   }
