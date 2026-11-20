@@ -39,6 +39,7 @@ export function createPhone(rootEl, callbacks = {}) {
   const body = root.querySelector('[data-body]');
   let current = null;
   let lastState = {};
+  let isShown = false;
 
   const apps = [
     { id:'contacts', label:'Contacts', icon:'👥' },
@@ -90,10 +91,10 @@ export function createPhone(rootEl, callbacks = {}) {
 
   home.addEventListener('click', (e)=>{ const a=e.target.closest('[data-app]'); if(a) openApp(a.getAttribute('data-app')); });
   root.querySelector('[data-back]').addEventListener('click', closeApp);
-  root.addEventListener('click', (e)=>{ if (e.target === root) { callbacks.onClose && callbacks.onClose(); hide(); } });
+  root.addEventListener('click', (e)=>{ if (e.target === root) { hide(); } });
 
-  function show(data){ if(data) lastState={...lastState,...data}; renderHome(); if(!current) closeApp(); else renderApp(current); root.classList.remove('hh-hidden'); callbacks.onOpen && callbacks.onOpen(); }
-  function hide(){ root.classList.add('hh-hidden'); callbacks.onClose && callbacks.onClose(); }
-  function update(state){ if(state) lastState={...lastState,...state}; if(!root.classList.contains('hh-hidden') && current) renderApp(current); }
+  function show(data){ if(data) lastState={...lastState,...data}; renderHome(); if(!current) closeApp(); else renderApp(current); root.classList.remove('hh-hidden'); isShown = true; callbacks.onOpen && callbacks.onOpen(); }
+  function hide(){ if (!isShown) { root.classList.add('hh-hidden'); return; } isShown = false; root.classList.add('hh-hidden'); callbacks.onClose && callbacks.onClose(); }
+  function update(state){ if(state) lastState={...lastState,...state}; if(isShown && current) renderApp(current); }
   return { show, hide, update, el: root };
 }

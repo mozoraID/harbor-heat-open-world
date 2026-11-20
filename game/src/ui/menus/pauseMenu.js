@@ -31,6 +31,7 @@ export function createPauseMenu(rootEl, callbacks = {}) {
   let active = 'map';
   let mapData = { roads: [], blocks: [], water: [] };
   let lastState = {};
+  let isShown = false;
 
   function setTab(t) {
     active = t;
@@ -161,9 +162,9 @@ export function createPauseMenu(rootEl, callbacks = {}) {
     else if (active === 'save') renderSave();
   }
 
-  function setMapData(data) { if (data) mapData = { roads: data.roads||[], blocks: data.blocks||[], water: data.water||[] }; if (active==='map' && !root.classList.contains('hh-hidden')) renderMap(); }
-  function show(data) { if (data) { if (data.mapData) setMapData(data.mapData); lastState = { ...lastState, ...data }; } root.classList.remove('hh-hidden'); render(); }
-  function hide() { root.classList.add('hh-hidden'); callbacks.onClose && callbacks.onClose(); }
-  function update(state) { if (state) lastState = { ...lastState, ...state }; if (!root.classList.contains('hh-hidden') && (active==='map'||active==='stats'||active==='missions')) render(); }
+  function setMapData(data) { if (data) mapData = { roads: data.roads||[], blocks: data.blocks||[], water: data.water||[] }; if (active==='map' && isShown) renderMap(); }
+  function show(data) { if (data) { if (data.mapData) setMapData(data.mapData); lastState = { ...lastState, ...data }; } root.classList.remove('hh-hidden'); isShown = true; render(); }
+  function hide() { if (!isShown) { root.classList.add('hh-hidden'); return; } isShown = false; root.classList.add('hh-hidden'); callbacks.onClose && callbacks.onClose(); }
+  function update(state) { if (state) lastState = { ...lastState, ...state }; if (isShown && (active==='map'||active==='stats'||active==='missions')) render(); }
   return { show, hide, update, setMapData, el: root };
 }

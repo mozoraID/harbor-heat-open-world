@@ -30,6 +30,7 @@
     linear-gradient(#0b1018,#0b1018) 1160px 100%/70px 95px no-repeat;
   }
 </style>
+
 </head>
 <body>
 <div id="bg"><div class="skyline"></div></div>
@@ -103,7 +104,7 @@ const title = createTitleScreen(root, {
 const pause = createPauseMenu(root, { onResume: () => pause.hide() });
 const phone = createPhone(root, { onClose: () => phone.hide() });
 
-title.hide(); pause.hide(); phone.hide();
+title.hide(); pause.hide(); phone.hide(); controls.hide();
 
 if (view === 'pause') {
   pause.setMapData(mapData);
