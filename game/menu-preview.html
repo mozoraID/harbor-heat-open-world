@@ -41,6 +41,10 @@ import { createPauseMenu } from './src/ui/menus/pauseMenu.js';
 import { createPhone } from './src/ui/menus/phone.js';
 import { createControlsCard } from './src/ui/menus/controlsCard.js';
 import { saveSlot, listSlots } from './src/save/saveSlots.js';
+import { getMissionGroups } from './src/missions/missionDefs/index.js';
+import { CHARACTERS } from './src/missions/characters.js';
+import { STORY } from './src/missions/story.js';
+import { createMissionRunner } from './src/missions/missionRunner.js';
 
 const root = document.getElementById('root');
 const params = new URLSearchParams(location.search);
@@ -67,25 +71,18 @@ for (let gx=-5; gx<=5; gx++) for (let gz=-5; gz<=5; gz++) {
 const mapData = { roads, blocks, water };
 
 const sampleState = {
-  player: { money:18450, health:72, armour:40, x:12, z:-8 },
+  player: { money:18450, health:72, armour:40, x:12, z:-8, yaw: 0.6 },
   rank: { name:'Wheelman', xp:340, next:600 },
-  completedMissions: ['m1','m2','m3','m4','m5'],
+  completedMissions: ['act1_first_light','act1_tide_breaker'],
   playTime: 5420,
   ownedCars: [{name:'Solenne Vortex GT',status:'Stored'},{name:'Bayline Cruiser',status:'Out'}],
   districtName: 'Marigold Beach',
-  districts: [
-    {name:'Marigold Beach',x:0,z:0},{name:'Coral Quay',x:150,z:-120},{name:'Salt Docks',x:-160,z:120},{name:'Old Span',x:120,z:140},{name:'Verdant Hills',x:-140,z:-140}
-  ],
   mapMarkers: {
-    missions:[{x:140,z:-120}],
-    safehouses:[{x:-80,z:60,name:'Safehouse'}],
+    missions:[{x:-260, z:-260, num:3}],
+    safehouses:[{x:-87,z:261,name:'Marigold Safehouse'},{x:-29,z:319,name:"Mama's Diner"}],
     shops:[{x:90,z:80,letter:'G'},{x:-60,z:40,letter:'A'},{x:-120,z:-60,letter:'C'}]
   },
-  missionGroups: [
-    { act:'Act I', missions:[{name:'Welcome to Port Solenne',status:'done'},{name:'First Wheels',status:'done'},{name:'Dockside Deal',status:'done'},{name:'Heat on the Water',status:'done'},{name:"The Fixer's Cut",status:'done'},{name:'Neon Tides',status:'active'}] },
-    { act:'Act II', missions:[{name:'Skyline Run',status:'locked'},{name:'Salt and Steel',status:'locked'},{name:'Crown of Quay',status:'locked'}] },
-  ],
-  minimap: { target:{x:140,z:-120}, shops:[{x:90,z:80,letter:'G'},{x:-60,z:40,letter:'A'}] },
+  minimap: { target:{x:-260,z:-260}, shops:[{x:90,z:80,letter:'G'},{x:-60,z:40,letter:'A'}] },
   contacts: [{id:'mama',name:'Mama Inés',role:'Fixer Matriarch'},{id:'wrench',name:'Wrench',full:'Teo "Wrench" Okafor',role:'Mechanic'},{id:'sasha',name:'Sasha Lune',role:'Getaway Artist'}],
   messages: [
     { from:'Mama Inés', text:'Mijo, Port Solenne takes what it wants. Bring me that courier bag and we talk real work.' },
@@ -93,7 +90,12 @@ const sampleState = {
     { from:'Sasha Lune', text:"Heat's heavy tonight. If you run, run clean—I\'ll watch the north bridge." },
     { me:true, text:'On my way. Keep the engine warm.' },
   ],
-  radio: { station:'WAVE 101.7' }
+  radio: { station:'WAVE 101.7' },
+  timeOfDay: '18:42',
+  phoneDate: 'FRI · NOV 20',
+  phoneNotification: { from: 'Sasha Lune', text: "Car's at the marina. Don't scratch it." },
+  mission: { objective: 'Reach the Ferro Docks pickup before time runs out', highlight: 'Ferro Docks', next: 'Grab the package', number: 3, act: 'ACT I', title: 'Neon Tides', stage: 2, stageTotal: 4, timer: 58 },
+  currentObjective: 'Reach the Ferro Docks pickup before time runs out',
 };
 
 const controls = createControlsCard(root);
@@ -106,14 +108,50 @@ const phone = createPhone(root, { onClose: () => phone.hide() });
 
 title.hide(); pause.hide(); phone.hide(); controls.hide();
 
-if (view === 'pause') {
+function buildMissionGroups(completedIds = []) {
+  const done = new Set(completedIds);
+  const groups = getMissionGroups();
+  let foundActive = false;
+  return groups.map(g => ({
+    act: g.act,
+    missions: g.missions.map(m => {
+      const unlocked = (m.unlockRequires || []).every(id => done.has(id));
+      const completed = done.has(m.id);
+      let status = 'locked';
+      if (completed) status = 'done';
+      else if (unlocked && !foundActive) { status = 'active'; foundActive = true; }
+      return { name: m.title, title: m.title, id: m.id, status };
+    })
+  }));
+}
+
+if (view === 'missions') {
+  // Run the runner through a fake state to demonstrate it, and show MISSIONS tab with all 9 grouped by act.
+  const runner = createMissionRunner();
+  const completed = ['act1_first_light','act1_tide_breaker'];
+  runner.setProgress(completed);
+  runner.startMission('act1_neon_tides', completed);
+  const hud = runner.update({ player: { x: -120, z: 260, wanted: 0, inCar: false } }, 0.016);
+  const missionGroups = buildMissionGroups(completed);
+  const state = { ...sampleState, ...hud, completedMissions: completed, missionGroups };
   pause.setMapData(mapData);
-  pause.show(sampleState);
+  pause.show(state);
+  // switch to missions tab
+  pause.el.querySelector('[data-tab="missions"]')?.click();
+} else if (view === 'pause') {
+  const completed = sampleState.completedMissions;
+  pause.setMapData(mapData);
+  pause.show({ ...sampleState, missionGroups: buildMissionGroups(completed) });
 } else if (view === 'phone') {
   phone.show(sampleState);
 } else {
   title.show();
 }
+
+// expose for quick inspection
+window.__hh = { CHARACTERS, STORY, runnerFactory: createMissionRunner };
+
 </script>
 </body>
 </html>
+
