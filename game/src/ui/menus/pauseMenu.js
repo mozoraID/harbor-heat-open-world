@@ -136,16 +136,29 @@ export function createPauseMenu(rootEl, callbacks = {}) {
       ctx.strokeRect(bx,by,bw,bh);
     }
 
-    // district labels (real districts from layout.js)
-    const defaultDistricts = [
-      { name:'Marigold Beach', x:0, z:319 },
-      { name:'Old Pier', x:-261, z:261 },
-      { name:'Lagoon Bridge', x:0, z:174 },
-      { name:'Ferro Docks', x:-203, z:-203 },
-      { name:'Cinder Hills', x:145, z:-145 },
-      { name:'Glasswater Heights', x:145, z:29 },
-    ];
-    const districts = (Array.isArray(lastState.districts) && lastState.districts.length) ? lastState.districts : defaultDistricts;
+    // district labels computed from real layout logic (layout.js/mapData.js)
+    function districtCenters() {
+      const n=12, blockSize=44, roadWidth=14, cell=58, offsetX=-355, offsetZ=-355;
+      function districtFor(i,j){
+        if (j >= n - 2) return 'Marigold Beach';
+        if (j >= n - 3 && i <= 2) return 'Old Pier';
+        if (i >= 4 && i <= 7 && j >= n - 4 && j <= n - 3) return 'Lagoon Bridge';
+        if (i <= 2 && j >= n - 4) return 'Old Pier';
+        if (i >= 8 && j <= 4) return 'Cinder Hills';
+        if (i >= 7 && j >= 5 && j <= 8) return 'Glasswater Heights';
+        if (i <= 3 && j <= 4) return 'Ferro Docks';
+        if (j <= 2) return 'Ferro Docks';
+        if (i >= 5) return 'Glasswater Heights';
+        return 'Cinder Hills';
+      }
+      const acc={};
+      for(let j=0;j<n;j++) for(let i=0;i<n;i++){
+        const name=districtFor(i,j); const x=offsetX+roadWidth+i*cell+blockSize/2; const z=offsetZ+roadWidth+j*cell+blockSize/2;
+        const a=(acc[name]||(acc[name]={x:0,z:0,c:0})); a.x+=x; a.z+=z; a.c++;
+      }
+      return Object.entries(acc).map(([name,v])=>({name,x:v.x/v.c,z:v.z/v.c}));
+    }
+    const districts = (Array.isArray(lastState.districts) && lastState.districts.length) ? lastState.districts : districtCenters();
     ctx.font = '800 13px "Segoe UI", Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const d of districts) {
       if (d.x == null || d.z == null) continue;
