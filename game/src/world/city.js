@@ -21,7 +21,6 @@ export function createCity(scene, state) {
   state.colliders = buildings.colliders;
   state.world.blocks = layout.blocks;
 
-  // boundary colliders to keep player roughly in town
   const pad = 10;
   state.world.bounds = {
     minX: layout.offsetX - pad,
@@ -30,5 +29,12 @@ export function createCity(scene, state) {
     maxZ: layout.offsetZ + layout.depth + 120,
   };
 
-  return { layout, sky, ground, buildings, props, water };
+  return {
+    layout, sky, ground, buildings, props, water,
+    update(dt, state) {
+      water.update(dt);
+      const p = state.player;
+      sky.update(dt, { x: p.x, y: p.y, z: p.z });
+    },
+  };
 }

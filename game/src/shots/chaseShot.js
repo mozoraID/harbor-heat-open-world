@@ -10,7 +10,8 @@ function addLightBar(carMesh, colorA, colorB) {
   carMesh.add(a); carMesh.add(b);
 }
 
-export function stageChaseShot({ app, state }) {
+export function stageChaseShot({ app, state, player }) {
+  if (player && player.model) player.model.visible = false;
   state.hud.mission = 'Act I: Breakwater Run';
   state.hud.objective = 'Lose Solenne Harbor Patrol and reach the Lagoon Bridge safehouse.';
   state.player.money = 1850;
