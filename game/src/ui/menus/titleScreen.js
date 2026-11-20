@@ -44,7 +44,7 @@ export function createTitleScreen(rootEl, callbacks = {}) {
         </div>
         <div class="hh-muted" style="font-size:13px;line-height:1.5;">
           Harbor Heat — an original open-world crime game set in Port Solenne.<br><br>
-          Created for the make.fun "Make GTA 6" bounty.<br>
+          Created for the make.fun open-world game bounty.<br>
           Built with Three.js. All code, art, and audio original.
         </div>
       </div>

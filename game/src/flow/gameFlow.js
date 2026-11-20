@@ -174,6 +174,7 @@ export function createGameFlow(ctx = {}) {
 
   function enterPlay() {
     title.hide();
+    checklist.hide();
     checklist.setCompactTitleMode(false);
     titleCamera.deactivate();
     showHud(true);
@@ -304,7 +305,7 @@ export function createGameFlow(ctx = {}) {
   }
 
   function onKeyDown(e) {
-    if (e.code === 'KeyH') { checklist.toggle(); return; }
+    if (e.code === 'KeyH') { if (mode !== 'title') checklist.toggle(); return; }
     if (mode === 'title') {
       if (e.code === 'Escape') { controlsCard.hide(); }
       return;

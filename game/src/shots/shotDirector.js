@@ -14,6 +14,7 @@ export function setupShots(name, ctx) {
     street: stageStreetShot,
     chase: stageChaseShot,
     map: stageMapShot,
+    missions: (c) => stageMapShot(c, 'missions'),
     phone: stagePhoneShot,
     title: stageTitleShot,
   };
@@ -31,21 +32,25 @@ export function setupShots(name, ctx) {
       if (ctrl.update) ctrl.update(dt, frames);
 
       // keep HUD in sync with staged state
-      const hudExtra = ctrl.hudExtra ? ctrl.hudExtra() : { timeLabel: '18:42 Golden Hour' };
-      if (ctrl.prompt !== undefined) hudExtra.prompt = ctrl.prompt;
-      ctx.state.interact = hudExtra.prompt || null;
-      ctx.state.timeOfDay = hudExtra.timeLabel || ctx.state.timeOfDay || '18:42';
-      if (ctx.state.car) ctx.state.speed = Math.abs(ctx.state.car.speed || 0);
-      ctx.hud.update(ctx.state);
+      if (!ctrl.hideHud) {
+        const hudExtra = ctrl.hudExtra ? ctrl.hudExtra() : { timeLabel: '18:42 Golden Hour' };
+        if (ctrl.prompt !== undefined) hudExtra.prompt = ctrl.prompt;
+        ctx.state.interact = hudExtra.prompt || null;
+        ctx.state.timeOfDay = hudExtra.timeLabel || ctx.state.timeOfDay || '18:42';
+        if (ctx.state.car) ctx.state.speed = Math.abs(ctx.state.car.speed || 0);
+        ctx.hud.update(ctx.state);
+      }
 
       // camera control
       if (ctrl.camera) {
-        const c = ctrl.camera;
-        ctx.app.camera.position.copy(c.position);
-        if (c.lookAt) ctx.app.camera.lookAt(c.lookAt);
-        if (c.fov) {
-          ctx.app.camera.fov = c.fov;
-          ctx.app.camera.updateProjectionMatrix();
+        const c = typeof ctrl.camera === 'function' ? ctrl.camera() : ctrl.camera;
+        if (c) {
+          ctx.app.camera.position.copy(c.position);
+          if (c.lookAt) ctx.app.camera.lookAt(c.lookAt);
+          if (c.fov) {
+            ctx.app.camera.fov = c.fov;
+            ctx.app.camera.updateProjectionMatrix();
+          }
         }
       }
 

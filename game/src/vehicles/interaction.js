@@ -2,11 +2,13 @@
 import { dist2 } from '../core/math.js';
 import { createPedestrianModel } from '../actors/pedestrianModel.js';
 
-export function findNearestCar(state, maxDist = 3.2) {
+export function findNearestCar(state, maxDist = 4.5) {
   const p = state.player;
   let best = null, bestD = maxDist * maxDist;
   const pools = [state.cars || []];
   if (state.traffic && state.traffic.cars) pools.push(state.traffic.cars);
+  const policeCars = state.police && state.police.units && state.police.units.cars;
+  if (policeCars) pools.push(policeCars);
   for (const list of pools) {
     for (const car of list) {
       if (!car || !car.mesh) continue;

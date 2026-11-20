@@ -88,17 +88,16 @@ export function createPauseMenu(rootEl, callbacks = {}) {
     // Rotate map so world +Z (south/beach/ocean) appears on east (right) side: map world Z -> canvas X, world X -> canvas Y
     const worldW = maxz - minz;
     const worldH = maxx - minx;
-    const pad = 28;
-    const sc = Math.min((rectW - pad*2) / Math.max(1, worldW), (rectH - pad*2) / Math.max(1, worldH));
-    const drawW = worldW * sc + pad*2;
-    const drawH = worldH * sc + pad*2;
-    canvas.width = Math.max(200, Math.floor(drawW));
-    canvas.height = Math.max(200, Math.floor(drawH));
+    const sc = Math.min(rectW / Math.max(1, worldW), rectH / Math.max(1, worldH)) * 0.95;
+    const ox = (rectW - worldW * sc) / 2;
+    const oy = (rectH - worldH * sc) / 2;
+    canvas.width = Math.max(200, Math.floor(rectW));
+    canvas.height = Math.max(200, Math.floor(rectH));
     canvas.style.width = canvas.width + 'px';
     canvas.style.height = canvas.height + 'px';
     const w = canvas.width, h = canvas.height;
-    const tx = (z)=> pad + (z - minz) * sc; // world z -> canvas x (east)
-    const ty = (x)=> pad + (maxx - x) * sc; // world x -> canvas y (north up-ish)
+    const tx = (z)=> ox + (z - minz) * sc; // world z -> canvas x (east)
+    const ty = (x)=> oy + (maxx - x) * sc; // world x -> canvas y (north up-ish)
 
     ctx.fillStyle = '#13202b'; ctx.fillRect(0,0,w,h);
 
@@ -119,7 +118,7 @@ export function createPauseMenu(rootEl, callbacks = {}) {
     // coastline stroke
     ctx.strokeStyle = 'rgba(255,245,220,0.7)'; ctx.lineWidth = 2;
     const coastZ = (mapData.water && mapData.water[0]) ? (rect(mapData.water[0]).z - rect(mapData.water[0]).h/2) : (maxz - 260);
-    ctx.beginPath(); ctx.moveTo(tx(coastZ), pad); ctx.lineTo(tx(coastZ), h-pad); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx(coastZ), 0); ctx.lineTo(tx(coastZ), h); ctx.stroke();
 
     // roads
     ctx.fillStyle = '#4a5666';

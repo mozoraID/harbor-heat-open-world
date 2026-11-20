@@ -28,16 +28,34 @@ function makeLabelTexture(text, color = '#ffcc4d') {
 export function createMissionBridge(ctx = {}) {
   const { state, scene, hud } = ctx;
   let completedIds = [];
-  let pendingDialogue = null;
+  let dialogueQueue = [];
+  let activeDialogue = null;
   let dialogueUntil = 0;
   let lastPassed = null;
 
+  function dialogueNow() {
+    return (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  }
+
+  function showNextDialogue() {
+    activeDialogue = dialogueQueue.shift() || null;
+    if (!activeDialogue) {
+      dialogueUntil = 0;
+      if (state && state.dialogue) state.dialogue = { ...state.dialogue, visible: false };
+      return;
+    }
+    if (state) state.dialogue = { ...activeDialogue, visible: true };
+    dialogueUntil = dialogueNow() + 4000;
+  }
+
   const runner = createMissionRunner({
     dialogue: (payload) => {
-      if (payload && payload.dialogue) {
-        pendingDialogue = { ...payload.dialogue, visible: true };
-        dialogueUntil = (typeof performance !== 'undefined' ? performance.now() : Date.now()) + 4200;
+      if (!payload || !payload.dialogue) return;
+      const lines = Array.isArray(payload.dialogue) ? payload.dialogue : [payload.dialogue];
+      for (const line of lines) {
+        if (line && (line.text || line.speaker)) dialogueQueue.push({ ...line, visible: true });
       }
+      if (dialogueQueue.length && !dialogueUntil) showNextDialogue();
     },
     onMissionPassed: (payload) => {
       lastPassed = payload;
@@ -175,14 +193,9 @@ export function createMissionBridge(ctx = {}) {
     }
     updateMarkerAnim(gameState.time || 0);
 
-    // dialogue timeout
-    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-    if (pendingDialogue && now < dialogueUntil) {
-      gameState.dialogue = pendingDialogue;
-    } else if (pendingDialogue && now >= dialogueUntil) {
-      pendingDialogue = null;
-      if (gameState.dialogue) gameState.dialogue = { ...gameState.dialogue, visible: false };
-    }
+    // stage dialogue: one line at a time, each held for four seconds
+    if (dialogueUntil && dialogueNow() >= dialogueUntil) showNextDialogue();
+    if (activeDialogue && dialogueUntil) gameState.dialogue = { ...activeDialogue, visible: true };
 
     // expose groups for pause menu
     gameState.missionGroups = getMissionGroupsWithStatus();

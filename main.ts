@@ -1,4 +1,4 @@
-// Harbor Heat: a GTA-inspired open-world crime game set in Port Solenne, a sun-soaked coastal city.
+// Harbor Heat: an original open-world crime game set in Port Solenne, a sun-soaked coastal city.
 // The game lives in this directory's game/ folder as plain static files a desktop browser loads
 // offline (game/index.html and its ES modules, vendored three.js, no build step, no network request).
 // It copies game/ and screenshots/ from beside this file to /output and writes /output/dossier.json,

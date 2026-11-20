@@ -191,7 +191,7 @@ function main() {
 
     let prompt = null;
     if (!state.player.inCar && !state.player.action) {
-      const near = findNearestCar(state, 3.2);
+      const near = findNearestCar(state, 4.5);
       if (near) prompt = 'Press F to ' + (near.driver && near.driver !== 'player' ? 'steal ' : 'enter ') + near.name;
     } else if (state.player.action === 'steal') {
       prompt = 'Pulling driver out...';
