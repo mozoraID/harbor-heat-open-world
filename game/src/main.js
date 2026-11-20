@@ -1,134 +1,71 @@
-// Boot and the one loop: input is read every frame, the world advances in fixed 1/60 s steps
-// (several in a slow frame, none in a fast one), and the renderer paints what is there. The game
-// moves between four screens: title, play, paused and game over.
-//
-// ?seed=N fixes the falling pattern. ?shot=start|play|end (with &seed=N) stages that scene
-// instead of running the loop, paints it twice and sets window.__shotReady for a screenshot.
-import { BEST_KEY, LIVES, STEP } from './config.js';
-import { createRandom } from './random.js';
-import { createWorld, EVENT_HIT, EVENT_OVER } from './world.js';
-import { ACTION_CONFIRM, ACTION_PAUSE, createInput } from './input.js';
-import { createRenderer, SCREEN_OVER, SCREEN_PAUSED, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
-import { stageShot } from './shots.js';
+// Entry point: wires core systems, world, actors, vehicles, HUD, and the game loop.
+import { createState } from './core/state.js';
+import { createClock } from './core/clock.js';
+import { createApp } from './core/app.js';
+import { createInput } from './core/input.js';
+import { createCity } from './world/city.js';
+import { createPlayer } from './actors/player.js';
+import { updateCamera } from './core/camera.js';
+import { parkCars, updateCar } from './vehicles/car.js';
+import { tryToggleVehicle, findNearestCar } from './vehicles/interaction.js';
+import { createHud } from './ui/hud.js';
+import { setupShots } from './shots/shotDirector.js';
 
-/** The longest frame the loop catches up on; a longer stall (a hidden tab) is dropped, not replayed. */
-const MAX_FRAME = 0.25;
+function main() {
+  const params = new URLSearchParams(window.location.search);
+  const shotName = params.get('shot');
+  const seed = parseInt(params.get('seed') || '1', 10) || 1;
+  const container = document.getElementById('app');
+  const hudRoot = document.getElementById('hud');
+  const app = createApp(container);
+  const state = createState(seed);
+  const clock = createClock();
+  const input = createInput(window);
+  const hud = createHud(hudRoot);
 
-const params = new URLSearchParams(window.location.search);
-const shot = params.get('shot');
-const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
-const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() * 4294967296);
+  const city = createCity(app.scene, state);
+  state.cars = parkCars(app.scene, state.world.layout, 40, state.rng);
+  const player = createPlayer(app.scene, state);
 
-const canvas = document.getElementById('game');
-const status = document.getElementById('status');
-const world = createWorld(createRandom(seed));
-const renderer = createRenderer(canvas);
-
-function readBest() {
-  try {
-    return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0;
-  } catch {
-    return 0;
-  }
-}
-
-function saveBest(value) {
-  try {
-    window.localStorage.setItem(BEST_KEY, String(value));
-  } catch {
-    // Storage can be off (private windows): the best score then lasts this visit only.
-  }
-}
-
-function runShot(name) {
-  const scene = stageShot(name, world);
-  let painted = 0;
-  function paint() {
-    renderer.draw(world.state, scene.screen, scene.best);
-    painted += 1;
-    if (painted < 2) requestAnimationFrame(paint);
-    else window.__shotReady = true;
-  }
-  requestAnimationFrame(paint);
-}
-
-function runGame() {
-  const input = createInput(canvas);
-  let screen = SCREEN_TITLE;
-  let best = readBest();
-  let accumulator = 0;
-  let last = performance.now();
-
-  // Screen readers (and anyone watching the page's text) hear the screen changes and each hit.
-  function announce(message) {
-    status.textContent = message;
+  let shotCtrl = null;
+  if (shotName) {
+    shotCtrl = setupShots(shotName, { app, state, city, player, hud, seed });
+  } else {
+    state.mode = 'play';
   }
 
-  function startGame() {
-    world.reset();
-    accumulator = 0;
-    screen = SCREEN_PLAY;
-    announce(`Playing. ${LIVES} lives.`);
-  }
-
-  function endGame() {
-    screen = SCREEN_OVER;
-    if (world.state.score > best) {
-      best = world.state.score;
-      saveBest(best);
-    }
-    announce(`Game over. Score ${world.state.score}. Best ${best}.`);
-  }
-
-  function handleActions() {
-    const actions = input.takeActions();
-    if (actions & ACTION_CONFIRM && (screen === SCREEN_TITLE || screen === SCREEN_OVER)) startGame();
-    else if (actions & ACTION_PAUSE && screen === SCREEN_PLAY) {
-      screen = SCREEN_PAUSED;
-      announce('Paused.');
-    } else if (actions & (ACTION_PAUSE | ACTION_CONFIRM) && screen === SCREEN_PAUSED) {
-      screen = SCREEN_PLAY;
-      announce('Playing.');
-    }
-  }
-
-  function step() {
-    if (screen === SCREEN_TITLE) {
-      world.step(STEP, 0, true);
-      return;
-    }
-    const events = world.step(STEP, input.direction(), false);
-    if (events & EVENT_OVER) endGame();
-    else if (events & EVENT_HIT) announce(world.state.lives === 1 ? 'Hit. 1 life left.' : `Hit. ${world.state.lives} lives left.`);
-  }
-
-  function frame(now) {
-    requestAnimationFrame(frame);
-    accumulator += Math.min((now - last) / 1000, MAX_FRAME);
-    last = now;
-    handleActions();
-    if (screen === SCREEN_TITLE || screen === SCREEN_PLAY) {
-      while (accumulator >= STEP && (screen === SCREEN_TITLE || screen === SCREEN_PLAY)) {
-        step();
-        accumulator -= STEP;
-      }
+  function simulate(dt) {
+    input.update();
+    if (input.consumeEnter()) tryToggleVehicle(state);
+    if (state.player.inCar && state.car) {
+      const car = state.car;
+      const ctl = { throttle: input.state.forward, steer: -input.state.right, brake: false, handbrake: input.state.jump };
+      if (input.state.forward < 0 && car.speed > 0.6) ctl.throttle = -0.7;
+      if (input.state.forward > 0 && car.speed < -0.6) ctl.throttle = 0.7;
+      updateCar(car, dt, ctl, state.colliders, state.world.bounds);
     } else {
-      accumulator = 0;
+      player.update(dt, input, state.camera.yaw - Math.PI);
     }
-    renderer.draw(world.state, screen, best);
+    city.update(dt, state);
+    updateCamera(app, state, dt);
+    let prompt = null;
+    if (!state.player.inCar) {
+      const near = findNearestCar(state, 3.2);
+      if (near) prompt = 'Press F to enter ' + near.name;
+    }
+    hud.update(state, { prompt, timeLabel: '18:42 Golden Hour' });
   }
 
-  // Leaving the tab pauses a running game rather than letting blocks fall unseen.
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && screen === SCREEN_PLAY) {
-      screen = SCREEN_PAUSED;
-      announce('Paused.');
-    }
-  });
+  function renderFrame(nowMs) {
+    requestAnimationFrame(renderFrame);
+    const now = nowMs / 1000;
+    if (shotCtrl) { shotCtrl.frame(now); return; }
+    const t = clock.tick(now);
+    for (let i = 0; i < t.steps; i++) simulate(clock.step);
+    app.renderer.render(app.scene, app.camera);
+  }
 
-  announce('Block Dodger. Press Space or click to start.');
-  requestAnimationFrame(frame);
+  requestAnimationFrame(renderFrame);
 }
 
-if (shot) runShot(shot);
-else runGame();
+main();
