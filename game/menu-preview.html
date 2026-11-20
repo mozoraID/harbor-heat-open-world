@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harbor Heat Menu Preview</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1020; }
+  #bg {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(1000px 520px at 65% 22%, rgba(255,180,120,0.22), transparent 60%),
+      radial-gradient(900px 520px at 18% 72%, rgba(92,200,255,0.18), transparent 60%),
+      linear-gradient(160deg, #0f1828 0%, #1b2a3a 45%, #24343a 72%, #2b2a24 100%);
+  }
+  .skyline { position:absolute; bottom:22%; left:0; right:0; height:140px; opacity:0.35; background:
+    linear-gradient(#0b1018,#0b1018) 0 100%/60px 80px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 70px 100%/40px 120px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 120px 100%/90px 60px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 220px 100%/50px 100px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 280px 100%/110px 130px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 400px 100%/70px 70px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 480px 100%/55px 110px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 545px 100%/120px 90px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 680px 100%/60px 140px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 750px 100%/80px 75px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 840px 100%/100px 115px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 950px 100%/60px 85px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 1020px 100%/130px 125px no-repeat,
+    linear-gradient(#0b1018,#0b1018) 1160px 100%/70px 95px no-repeat;
+  }
+</style>
+</head>
+<body>
+<div id="bg"><div class="skyline"></div></div>
+<div id="root"></div>
+<script type="module">
+import { createTitleScreen } from './src/ui/menus/titleScreen.js';
+import { createPauseMenu } from './src/ui/menus/pauseMenu.js';
+import { createPhone } from './src/ui/menus/phone.js';
+import { createControlsCard } from './src/ui/menus/controlsCard.js';
+import { saveSlot, listSlots } from './src/save/saveSlots.js';
+
+const root = document.getElementById('root');
+const params = new URLSearchParams(location.search);
+const view = params.get('view') || 'title';
+
+// seed sample slots for preview
+try {
+  const slots = listSlots();
+  if (!slots[0].data) {
+    saveSlot(1, { money:18450, respectXP:340, rank:'Wheelman', completedMissions:['m1','m2','m3','m4','m5'], unlockedWeapons:['fists','bat','pistol','smg'], ownedCars:[{name:'Solenne Vortex GT',status:'Stored'}], playerPosition:{x:12,y:0,z:-8}, playTime:5420, savedAt:new Date().toISOString(), missionPercent:30 });
+  }
+  if (!slots[1].data) {
+    saveSlot(2, { money:4200, respectXP:80, rank:'Runner', completedMissions:['m1','m2'], unlockedWeapons:['fists','bat','pistol'], ownedCars:[{name:'Bayline Cruiser',status:'Out'}], playerPosition:{x:-40,y:0,z:60}, playTime:1800, savedAt:new Date(Date.now()-86400000).toISOString(), missionPercent:10 });
+  }
+} catch {}
+
+const roads=[], blocks=[], water=[{x:0,z:260,w:800,h:220}];
+for (let gx=-5; gx<=5; gx++) for (let gz=-5; gz<=5; gz++) {
+  const x=gx*60, z=gz*60;
+  blocks.push({x,z,w:44,h:44});
+  roads.push({x:x+30,z,w:16,h:60});
+  roads.push({x,z:z+30,w:60,h:16});
+}
+const mapData = { roads, blocks, water };
+
+const sampleState = {
+  player: { money:18450, health:72, armour:40, x:12, z:-8 },
+  rank: { name:'Wheelman', xp:340, next:600 },
+  completedMissions: ['m1','m2','m3','m4','m5'],
+  playTime: 5420,
+  ownedCars: [{name:'Solenne Vortex GT',status:'Stored'},{name:'Bayline Cruiser',status:'Out'}],
+  districtName: 'Marigold Beach',
+  districts: [
+    {name:'Marigold Beach',x:0,z:0},{name:'Coral Quay',x:150,z:-120},{name:'Salt Docks',x:-160,z:120},{name:'Old Span',x:120,z:140},{name:'Verdant Hills',x:-140,z:-140}
+  ],
+  mapMarkers: {
+    missions:[{x:140,z:-120}],
+    safehouses:[{x:-80,z:60,name:'Safehouse'}],
+    shops:[{x:90,z:80,letter:'G'},{x:-60,z:40,letter:'A'},{x:-120,z:-60,letter:'C'}]
+  },
+  missionGroups: [
+    { act:'Act I', missions:[{name:'Welcome to Port Solenne',status:'done'},{name:'First Wheels',status:'done'},{name:'Dockside Deal',status:'done'},{name:'Heat on the Water',status:'done'},{name:"The Fixer's Cut",status:'done'},{name:'Neon Tides',status:'active'}] },
+    { act:'Act II', missions:[{name:'Skyline Run',status:'locked'},{name:'Salt and Steel',status:'locked'},{name:'Crown of Quay',status:'locked'}] },
+  ],
+  minimap: { target:{x:140,z:-120}, shops:[{x:90,z:80,letter:'G'},{x:-60,z:40,letter:'A'}] },
+  contacts: [{id:'mama',name:'Mama Inés',role:'Fixer Matriarch'},{id:'wrench',name:'Wrench',full:'Teo "Wrench" Okafor',role:'Mechanic'},{id:'sasha',name:'Sasha Lune',role:'Getaway Artist'}],
+  messages: [
+    { from:'Mama Inés', text:'Mijo, Port Solenne takes what it wants. Bring me that courier bag and we talk real work.' },
+    { from:'Wrench', text:'Got a new intake for the Vortex. Swing by the shop, I\'ll make it scream.' },
+    { from:'Sasha Lune', text:"Heat's heavy tonight. If you run, run clean—I\'ll watch the north bridge." },
+    { me:true, text:'On my way. Keep the engine warm.' },
+  ],
+  radio: { station:'WAVE 101.7' }
+};
+
+const controls = createControlsCard(root);
+const title = createTitleScreen(root, {
+  onControls: () => controls.show(),
+  onContinue: () => {}, onNewGame: () => {},
+});
+const pause = createPauseMenu(root, { onResume: () => pause.hide() });
+const phone = createPhone(root, { onClose: () => phone.hide() });
+
+title.hide(); pause.hide(); phone.hide();
+
+if (view === 'pause') {
+  pause.setMapData(mapData);
+  pause.show(sampleState);
+} else if (view === 'phone') {
+  phone.show(sampleState);
+} else {
+  title.show();
+}
+</script>
+</body>
+</html>
