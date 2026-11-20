@@ -5,29 +5,36 @@ import { clamp, damp } from '../core/math.js';
 import { resolveCircleColliders } from '../core/collisions.js';
 import { createCarMesh } from './carModels.js';
 
+export function createCarState(opts = {}) {
+  const mesh = opts.mesh || null;
+  return {
+    mesh,
+    type: opts.type || 'sedan',
+    name: opts.name || 'Sedan',
+    x: opts.x ?? (mesh ? mesh.position.x : 0),
+    z: opts.z ?? (mesh ? mesh.position.z : 0),
+    yaw: opts.yaw || 0,
+    speed: opts.speed ?? 0,
+    radius: opts.radius || 1.7,
+    driver: opts.driver ?? null,
+    maxSpeed: opts.maxSpeed || PHYSICS.carMaxSpeed,
+    damage: opts.damage ?? 0,
+    health: opts.health ?? 100,
+    smoke: opts.smoke ?? 0,
+    dead: opts.dead ?? false,
+  };
+}
+
 export function createCar(scene, opts = {}) {
   const mesh = createCarMesh(opts.type || 'sedan', opts.color || '#e4572e');
   mesh.position.set(opts.x || 0, 0, opts.z || 0);
   mesh.rotation.y = opts.yaw || 0;
   scene.add(mesh);
-  return {
-    mesh,
-    type: opts.type || 'sedan',
-    name: opts.name || 'Sedan',
-    x: mesh.position.x, z: mesh.position.z,
-    yaw: opts.yaw || 0,
-    speed: 0,
-    radius: opts.radius || 1.7,
-    driver: opts.driver || null,
-    maxSpeed: opts.maxSpeed || PHYSICS.carMaxSpeed,
-    damage: 0,
-    health: 100,
-    smoke: 0,
-    dead: false,
-  };
+  return createCarState({ ...opts, mesh });
 }
 
 export function updateCar(car, dt, control, colliders, bounds, state) {
+  if (!Number.isFinite(car.speed)) car.speed = 0;
   if (car.dead) { car.speed = damp(car.speed, 0, 3, dt); car.mesh.position.x += Math.sin(car.yaw) * car.speed * dt; car.mesh.position.z += Math.cos(car.yaw) * car.speed * dt; return; }
   const accelBase = PHYSICS.carAccel * (car.type === 'sports' ? 1.2 : car.type === 'armoured' ? 0.8 : 1);
   let accel = (control.throttle || 0) * accelBase;

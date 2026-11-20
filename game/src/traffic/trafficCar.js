@@ -1,12 +1,13 @@
 // Individual traffic car behavior: lane following, turning, and simple obstacle stops.
 import * as THREE from 'three';
 import { createCarMesh } from '../vehicles/carModels.js';
+import { createCarState } from '../vehicles/car.js';
 
 const TYPES = [
-  { type: 'sedan', name: 'Sedan', colors: ['#3a86ff', '#e4572e', '#8ac926', '#6c757d', '#ffd166'] },
-  { type: 'taxi', name: 'Taxi', colors: ['#ffd166'] },
-  { type: 'van', name: 'Van', colors: ['#adb5bd', '#457b9d'] },
-  { type: 'pickup', name: 'Pickup', colors: ['#52796f', '#774936'] },
+  { type: 'sedan', name: 'Sedan', maxSpeed: 24, colors: ['#3a86ff', '#e4572e', '#8ac926', '#6c757d', '#ffd166'] },
+  { type: 'taxi', name: 'Taxi', maxSpeed: 22, colors: ['#ffd166'] },
+  { type: 'van', name: 'Van', maxSpeed: 20, colors: ['#adb5bd', '#457b9d'] },
+  { type: 'pickup', name: 'Pickup', maxSpeed: 23, colors: ['#52796f', '#774936'] },
 ];
 
 function pickEdge(graph, rng, avoidNodeId = -1) {
@@ -22,7 +23,13 @@ export function createTrafficCar(scene, state, graph) {
   scene.add(mesh);
   const edge = pickEdge(graph, state.rng);
   const lane = (state.rng() < 0.5 ? 1 : -1) * 2.2;
-  const car = { mesh, type: spec.type, name: spec.name, edge, t: state.rng(), speed: 0, target: state.rng.range(8, 13), lane, yaw: 0, stopped: 0, radius: 1.6, traffic: true, damage: 0, driver: 'npc' };
+  const car = createCarState({ mesh, type: spec.type, name: spec.name, yaw: 0, radius: 1.6, driver: 'npc', maxSpeed: spec.maxSpeed });
+  car.edge = edge;
+  car.t = state.rng();
+  car.target = state.rng.range(8, 13);
+  car.lane = lane;
+  car.stopped = 0;
+  car.traffic = true;
   placeOnEdge(car);
   return car;
 }
@@ -35,6 +42,8 @@ function placeOnEdge(car) {
   car.yaw = Math.atan2(dx, dz);
   car.mesh.position.set(a.x + dx * car.t + nx * car.lane, 0, a.z + dz * car.t + nz * car.lane);
   car.mesh.rotation.y = car.yaw;
+  car.x = car.mesh.position.x;
+  car.z = car.mesh.position.z;
 }
 
 export function updateTrafficCar(car, dt, state, graph, cars) {
