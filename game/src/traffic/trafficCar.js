@@ -45,11 +45,21 @@ export function updateTrafficCar(car, dt, state, graph, cars) {
   const stopZone = (car.t > 0.82) && ((Math.floor(state.time * 0.4) + b.id) % 3 === 0);
   let desired = car.target;
   if (stopZone) desired = 0;
-  // avoid player car roughly
+  // avoid player (on foot or in car) ahead in lane / standing on road
   const px = state.player.x, pz = state.player.z;
   const cx = car.mesh.position.x, cz = car.mesh.position.z;
-  const pdx = cx - px, pdz = cz - pz;
-  if (pdx * pdx + pdz * pdz < 36) desired = Math.min(desired, 2);
+  const vx = px - cx, vz = pz - cz;
+  const fwd = vx * Math.sin(car.yaw) + vz * Math.cos(car.yaw);
+  const side = Math.abs(vx * Math.cos(car.yaw) - vz * Math.sin(car.yaw));
+  const d2 = vx * vx + vz * vz;
+  const inFront = fwd > 0 && fwd < 16 && side < 2.8;
+  const near = d2 < 36;
+  if (inFront) desired = 0;
+  else if (near) desired = Math.min(desired, 1.5);
+  // mild lateral nudge when player stands in road close ahead
+  if (state.player && !state.player.inCar && inFront && fwd < 9) {
+    car.mesh.position.x += (vx * Math.cos(car.yaw) - vz * Math.sin(car.yaw) > 0 ? -1 : 1) * 0.03;
+  }
 
   car.speed += (desired - car.speed) * Math.min(1, dt * 2.5);
   car.t += (car.speed * dt) / len;

@@ -10,13 +10,18 @@ export function createInput(target = window) {
     lookDX: 0,
     lookDY: 0,
     pointerLocked: false,
+    firing: false,
+    firePressed: false,
+    weaponSlot: 0,
   };
 
   function onKey(e, down) {
-    const k = e.key.toLower();
-    if (['w','a','s','d','shift',' ','f','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+    const k = (e && e.key ? String(e.key) : '').toLowerCase();
+    if (!k) return;
+    if (['w','a','s','d','shift',' ','f','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault?.();
     if (down) keys.add(k); else keys.delete(k);
     if (down && k === 'f') state.enterPressed = true;
+    if (down && k >= '1' && k <= '6') state.weaponSlot = parseInt(k, 10);
   }
 
   target.addEventListener('keydown', (e) => onKey(e, true));
@@ -29,6 +34,11 @@ export function createInput(target = window) {
         canvas.requestPointerLock?.();
       }
     });
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 0) { state.firing = true; state.firePressed = true; }
+      if (!state.pointerLocked && document.pointerLockElement !== canvas) canvas.requestPointerLock?.();
+    });
+    target.addEventListener('mouseup', (e) => { if (e.button === 0) state.firing = false; });
   }
   document.addEventListener('pointerlockchange', () => {
     state.pointerLocked = document.pointerLockElement === canvas;
@@ -52,14 +62,16 @@ export function createInput(target = window) {
       state.jump = keys.has(' ');
     },
     consumeEnter() {
-      const v = state.enterPressed;
-      state.enterPressed = false;
-      return v;
+      const v = state.enterPressed; state.enterPressed = false; return v;
     },
     consumeLook() {
-      const dx = state.lookDX, dy = state.lookDY;
-      state.lookDX = 0; state.lookDY = 0;
-      return { dx, dy };
+      const dx = state.lookDX, dy = state.lookDY; state.lookDX = 0; state.lookDY = 0; return { dx, dy };
+    },
+    consumeFire() {
+      const v = state.firePressed; state.firePressed = false; return v;
+    },
+    consumeWeaponSlot() {
+      const v = state.weaponSlot; state.weaponSlot = 0; return v;
     },
   };
 }

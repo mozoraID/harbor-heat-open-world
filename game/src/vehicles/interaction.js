@@ -70,7 +70,7 @@ export function updateVehicleActions(dt, state, scene) {
 
 function spawnFleeingDriver(scene, state, car) {
   if (!state._fleeing) state._fleeing = [];
-  const m = createPedestrianModel(state.rng);
+  const m = createPedestrianModel(state.rng ? state.rng : Math.random);
   m.position.set(car.mesh.position.x + 2.2, 0.15, car.mesh.position.z);
   scene.add(m);
   state._fleeing.push({ model: m, x: m.position.x, z: m.position.z, dir: car.yaw + Math.PI / 2, t: 4 });

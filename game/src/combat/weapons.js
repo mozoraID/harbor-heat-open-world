@@ -38,7 +38,18 @@ export function createCombatSystem(state) {
     const yaw = inCar ? state.car.yaw : state.player.yaw;
     const dx = Math.sin(yaw), dz = Math.cos(yaw);
     if (state.effects) state.effects.spark(ox + dx * 1.2, oy, oz + dz * 1.2);
-    if (state.police && state.police.reportCrime && w.slot >= 3) state.police.reportCrime('shoot', state.time);
+    if (state.police && state.police.reportCrime) {
+      // any public violence/shot risks wanted heat; proximity to cops/peds makes it immediate
+      let nearCops = false, nearPeds = false;
+      if (state.police.units && state.police.units.cars) {
+        nearCops = state.police.units.cars.some(c => c && c.mesh && ((c.mesh.position.x - ox) ** 2 + (c.mesh.position.z - oz) ** 2) < 60 * 60);
+      }
+      if (state.pedestrians && state.pedestrians.peds) {
+        nearPeds = state.pedestrians.peds.some(p => !p.dead && ((p.x - ox) ** 2 + (p.z - oz) ** 2) < 25 * 25);
+      }
+      state.police.reportCrime(w.slot >= 3 ? 'shoot' : (nearPeds ? 'hitPed' : 'shoot'), state.time);
+      if (nearCops) state.police.reportCrime('shoot', state.time);
+    }
 
     let best = null, bestT = w.range;
     const tryHit = (obj, kind, r = 1.2) => {
