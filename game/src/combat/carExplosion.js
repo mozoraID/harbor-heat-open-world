@@ -16,18 +16,43 @@ export function createCarExplosion(scene, x, z) {
   fire3.position.y = 2.0;
 
   const smokes = [];
-  for (let i = 0; i < 5; i++) {
-    const s = add(new THREE.Mesh(new THREE.SphereGeometry(1.2 + i * 0.5, 10, 10), new THREE.MeshStandardMaterial({ color: 0x222, transparent: true, opacity: 0.55, roughness: 1 })));
-    s.position.set((Math.random() - 0.5) * 1.2, 2.5 + i * 1.0, (Math.random() - 0.5) * 1.2);
-    smokes.push({ m: s, vy: 0.8 + Math.random() * 0.8, baseY: s.position.y });
+  const smokeCount = 10;
+  for (let i = 0; i < smokeCount; i++) {
+    const r = 0.55 + Math.random() * 1.05;
+    const grey = 0.12 + Math.random() * 0.38;
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(grey, grey, grey), transparent: true, opacity: 0.18 + Math.random() * 0.28, roughness: 1, depthWrite: false });
+    const s = add(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 10), mat));
+    s.position.set((Math.random() - 0.5) * 1.6, 1.6 + Math.random() * 2.6, (Math.random() - 0.5) * 1.6);
+    smokes.push({
+      m: s,
+      vx: (Math.random() - 0.5) * 0.9,
+      vy: 0.45 + Math.random() * 1.1,
+      vz: (Math.random() - 0.5) * 0.9,
+      grow: 0.18 + Math.random() * 0.35,
+      base: mat.opacity,
+      drag: 0.97 + Math.random() * 0.02,
+      swirl: Math.random() * Math.PI * 2,
+    });
   }
 
   const sparks = [];
-  const sparkGeo = new THREE.SphereGeometry(0.08, 6, 6);
-  for (let i = 0; i < 18; i++) {
-    const sp = add(new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffdd66 : 0xff8833, blending: THREE.AdditiveBlending })));
-    sp.position.set(0, 1.0, 0);
-    sparks.push({ m: sp, vx: (Math.random() - 0.5) * 9, vy: 2 + Math.random() * 6, vz: (Math.random() - 0.5) * 9, t: 0.8 + Math.random() * 0.8 });
+  const sparkGeo = new THREE.SphereGeometry(0.05, 6, 6);
+  const emberCount = 22;
+  for (let i = 0; i < emberCount; i++) {
+    const hot = Math.random();
+    const color = hot > 0.6 ? 0xffee88 : (hot > 0.3 ? 0xffaa33 : 0xff6622);
+    const sp = add(new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })));
+    sp.position.set((Math.random() - 0.5) * 0.6, 1.0 + Math.random() * 0.8, (Math.random() - 0.5) * 0.6);
+    sparks.push({
+      m: sp,
+      vx: (Math.random() - 0.5) * 5.5,
+      vy: 1.8 + Math.random() * 6.5,
+      vz: (Math.random() - 0.5) * 5.5,
+      t: 0.8 + Math.random() * 1.6,
+      max: 1.0,
+      flicker: Math.random() * Math.PI * 2,
+    });
+    sparks[sparks.length - 1].max = sparks[sparks.length - 1].t;
   }
 
   const debris = [];
@@ -56,12 +81,28 @@ export function createCarExplosion(scene, x, z) {
       fire1.material.opacity = 0.8 + Math.sin(this.t * 9) * 0.15;
       fire2.material.opacity = 0.65 + Math.sin(this.t * 6) * 0.15;
       light.intensity = 10 + Math.sin(this.t * 11) * 5;
-      for (const s of smokes) { s.m.position.y += s.vy * dt; s.m.scale.multiplyScalar(1 + dt * 0.25); s.m.material.opacity = Math.max(0.18, 0.55 - this.t * 0.08); }
+      for (const s of smokes) {
+        s.swirl += dt * 0.8;
+        s.vx *= s.drag; s.vz *= s.drag;
+        s.m.position.x += (s.vx + Math.sin(s.swirl + s.m.position.y) * 0.12) * dt;
+        s.m.position.y += s.vy * dt;
+        s.m.position.z += (s.vz + Math.cos(s.swirl * 0.9) * 0.12) * dt;
+        s.m.scale.multiplyScalar(1 + dt * s.grow);
+        const fade = Math.max(0, s.base - this.t * 0.045 - s.m.position.y * 0.006);
+        s.m.material.opacity = fade;
+      }
       for (const sp of sparks) {
-        sp.t -= dt; if (sp.t <= 0) continue;
-        sp.vy -= 9 * dt; sp.m.position.x += sp.vx * dt; sp.m.position.y += sp.vy * dt; sp.m.position.z += sp.vz * dt;
-        if (sp.m.position.y < 0.05) { sp.m.position.y = 0.05; sp.vy *= -0.2; sp.vx *= 0.5; sp.vz *= 0.5; }
-        sp.m.material.opacity = Math.max(0, sp.t);
+        sp.t -= dt; if (sp.t <= 0) { sp.m.visible = false; continue; }
+        sp.flicker += dt * 18;
+        sp.vy -= 7.5 * dt;
+        sp.vx *= 0.985; sp.vz *= 0.985;
+        sp.m.position.x += sp.vx * dt;
+        sp.m.position.y += sp.vy * dt;
+        sp.m.position.z += sp.vz * dt;
+        if (sp.m.position.y < 0.05) { sp.m.position.y = 0.05; sp.vy *= -0.2; sp.vx *= 0.4; sp.vz *= 0.4; }
+        const k = Math.max(0, sp.t / sp.max);
+        sp.m.material.opacity = k * (0.55 + 0.45 * Math.abs(Math.sin(sp.flicker)));
+        sp.m.scale.setScalar(0.6 + k * 0.8);
       }
       for (const d of debris) {
         if (d.ground) continue;
