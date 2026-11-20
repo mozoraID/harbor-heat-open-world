@@ -29,8 +29,8 @@ export function injectHudStyles() {
     .hh-top-left { position: absolute; left: 18px; top: 16px; display: flex; flex-direction: column; gap: 8px; width: 380px; }
     .hh-top-right { position: absolute; right: 18px; top: 16px; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .hh-bottom-left { position: absolute; left: 18px; bottom: 18px; display: flex; align-items: flex-end; gap: 12px; }
-    .hh-bottom-right { position: absolute; right: 18px; bottom: 18px; text-align: right; }
-    .hh-bottom-center { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); }
+    .hh-bottom-right { position: absolute; right: 18px; bottom: 18px; text-align: right; display:flex; flex-direction:column; align-items:flex-end; }
+    .hh-bottom-center { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); }
     .hh-center-top { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); text-align: center; }
     .hh-center-mid { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); }
 
@@ -68,32 +68,32 @@ export function injectHudStyles() {
     .hh-dispatch-footer { margin-top:6px; padding:4px 8px; background:rgba(255,204,77,0.18); border:1px solid rgba(255,204,77,0.5); color:#ffcc4d; font-size:11px; font-weight:900; letter-spacing:1.4px; text-align:center; border-radius:4px; }
 
     /* Top-right money/stars/heat */
-    .hh-money { font-size: 34px; font-weight: 900; color: #3ee6b0; letter-spacing: 0.5px; }
+    .hh-money { font-size: 34px; font-weight: 900; color: #3ee6b0; letter-spacing: 0.5px; line-height:1; }
     .hh-clock { font-size: 18px; font-weight: 800; }
-    .hh-stars { font-size: 26px; letter-spacing: 3px; line-height:1; }
-    .hh-star { color: #2a303a; text-shadow: -1px -1px 0 #111, 1px -1px 0 #111, -1px 1px 0 #111, 1px 1px 0 #111; }
+    .hh-stars { font-size: 28px; letter-spacing: 3px; line-height:1; }
+    .hh-star { color: #2a303a; text-shadow: -1px -1px 0 #111, 1px -1px 0 #111, -1px 1px 0 #111, 1px 1px 0 #111, 0 1px 2px rgba(0,0,0,0.8); }
     .hh-star.on { color: #ffcc4d; text-shadow: -1px -1px 0 #5a3b00, 1px -1px 0 #5a3b00, -1px 1px 0 #5a3b00, 1px 1px 0 #5a3b00, 0 0 10px rgba(255,204,77,0.8), 0 0 18px rgba(255,204,77,0.35); }
     .hh-star.flash { animation: hh-flash 0.45s infinite alternate; }
     @keyframes hh-flash { from { color:#8a6a10; text-shadow:-1px -1px 0 #332,1px -1px 0 #332,-1px 1px 0 #332,1px 1px 0 #332,0 0 4px rgba(255,204,77,0.3); } to { color:#ffe28a; text-shadow:-1px -1px 0 #5a3b00,1px -1px 0 #5a3b00,-1px 1px 0 #5a3b00,1px 1px 0 #5a3b00,0 0 14px rgba(255,204,77,1),0 0 26px rgba(255,80,80,0.5); } }
-    .hh-heat { display:flex; align-items:center; gap:6px; margin-top:2px; }
+    .hh-heat { display:flex; align-items:center; gap:6px; margin-top:3px; justify-content:flex-end; }
     .hh-heat-label { font-size:9px; font-weight:900; letter-spacing:1.4px; color:#ff9b4d; }
     .hh-heat-track { width:120px; height:6px; background:rgba(255,255,255,0.12); border-radius:3px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); }
     .hh-heat-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffcc4d,#ff6b5a); box-shadow:0 0 8px rgba(255,107,90,0.6); transition: width 0.2s ease; }
     .hh-statusline { font-size: 11px; color: #ff6b5a; letter-spacing: 1px; text-transform: uppercase; font-weight: 900; margin-top:2px; }
 
     /* Weapon bar (top-right compact) */
-    .hh-weaponbar { display:flex; gap:4px; padding:4px 6px; align-items:flex-end; justify-content:flex-end; }
-    .hh-slot { width:54px; height:42px; border-radius:6px; background:rgba(14,18,32,0.78); border:1px solid rgba(255,255,255,0.14); position:relative; overflow:hidden; }
-    .hh-slot.active { width:78px; height:52px; border-color:#ffcc4d; box-shadow:0 0 12px rgba(255,204,77,0.4); }
+    .hh-weaponbar { display:flex; gap:4px; padding:4px 6px; align-items:flex-end; justify-content:flex-end; background: rgba(14,18,32,0.72); border-radius:8px; backdrop-filter: blur(4px); box-shadow: 0 6px 18px rgba(0,0,0,0.35); border-left:3px solid #ffcc4d; }
+    .hh-slot { width:52px; height:40px; border-radius:6px; background:rgba(10,14,24,0.7); border:1px solid rgba(255,255,255,0.14); position:relative; overflow:hidden; }
+    .hh-slot.active { width:76px; height:50px; border-color:#ffcc4d; box-shadow:0 0 12px rgba(255,204,77,0.4); }
     .hh-slot.locked { opacity:0.35; filter:grayscale(0.7); }
     .hh-slot-num { position:absolute; left:3px; top:1px; font-size:9px; color:#ffcc4d; font-weight:900; }
     .hh-slot-name { position:absolute; left:3px; bottom:10px; right:2px; font-size:8px; font-weight:800; text-transform:uppercase; color:#e8eef7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .hh-slot-ammo { position:absolute; right:3px; bottom:1px; font-size:9px; color:#3ee6b0; font-weight:800; }
     .hh-slot canvas { position:absolute; right:1px; top:1px; }
-    .hh-slot.active canvas { right:2px; top:2px; }
+    .hh-slot.active canvas { right:3px; top:3px; }
 
-    /* Rank */
-    .hh-rank { position:absolute; right:18px; bottom:210px; width:240px; padding:8px 10px; }
+    /* Rank (placed in bottom-right flow) */
+    .hh-rank { width:240px; padding:8px 10px; }
     .hh-rank-name { font-size:13px; font-weight:900; color:#ffcc4d; text-transform:uppercase; letter-spacing:1px; }
     .hh-bar-bg { height:8px; background:rgba(255,255,255,0.12); border-radius:4px; overflow:hidden; margin-top:4px; }
     .hh-bar-fill { height:100%; border-radius:4px; }
@@ -105,7 +105,7 @@ export function injectHudStyles() {
 
     /* Minimap */
     .hh-minimap-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
-    .hh-minimap { width:204px; height:204px; border-radius:50%; background:rgba(8,12,18,0.85); border:none; box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+    .hh-minimap { width:204px; height:204px; display:block; background:transparent; border:none; box-shadow:0 4px 20px rgba(0,0,0,0.45); }
     .hh-district-label { font-size:11px; text-transform:uppercase; letter-spacing:1.4px; color:#5cc8ff; font-weight:900; text-shadow:0 1px 3px rgba(0,0,0,0.8); }
 
     /* Speedo */
@@ -124,8 +124,8 @@ export function injectHudStyles() {
     .hh-cond-text { font-size:11px; font-weight:900; color:#d7deea; }
 
     /* Radio, dialogue, misc */
-    .hh-radio { position:absolute; left:18px; bottom:290px; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:800; }
-    .hh-dialogue { width:640px; max-width:calc(100vw - 200px); padding:10px 12px; display:flex; gap:12px; align-items:flex-start; }
+    .hh-radio { position:absolute; left:18px; bottom:310px; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:800; }
+    .hh-dialogue { width:640px; max-width:calc(100vw - 220px); padding:10px 12px; display:flex; gap:12px; align-items:flex-start; }
     .hh-portrait { width:72px; height:72px; border-radius:8px; background:#111; flex:0 0 auto; border:2px solid rgba(255,255,255,0.15); }
     .hh-dialogue-name { font-size:14px; font-weight:900; color:#ffcc4d; }
     .hh-dialogue-role { font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#5cc8ff; margin-left:8px; }

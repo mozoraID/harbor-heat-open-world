@@ -12,9 +12,10 @@ Every widget reads only from the `state` object passed to `update(state)` (plus 
   - `yaw` (number radians, default `0`) – facing/heading for minimap rotation when on foot.
   - `inCar` (truthy/falsy, default `false`) – whether driving; affects speedo, minimap heading, mode.
   - `activeWeapon` (number 1-6, default `1`) – active weapon slot.
+  - `heat` (number 0-1, optional) – progress toward next wanted star; shown in HEAT meter if provided.
 - `state.car` (object|null) – current vehicle when `player.inCar`
   - `name` (string, default `"Vehicle"`)
-  - `speed` (number, m/s, default `0`) – converted to km/h (*3.6) for speedo.
+  - `speed` (number, m/s, default `0`) – converted to km/h (*3.6) for speedo/gauge.
   - `condition` (number 0-100, default `100` when in car)
   - `gear` (string|number, default `"D"`)
   - `yaw` (number radians) – heading for minimap when in car.
@@ -37,22 +38,24 @@ Every widget reads only from the `state` object passed to `update(state)` (plus 
   - `objective` (string, fallback `state.hud.objective`)
   - `highlight` (string, optional) – keyword in objective to highlight in gold.
   - `next` (string, optional) – "NEXT" line text.
-  - `timer` (number seconds, optional) – countdown shown in header when present.
+  - `timer` (number seconds, optional) – shown in header; drives thin stage-timer progress bar (auto-scales to first/max seen value per mission/stage; turns red when low).
 
 ## Dispatch panel (`dispatch`)
 - `state.dispatch` (object)
   - `visible` (boolean, default `true`)
   - `stars` (number, fallback `state.player.wanted`)
-  - `units` (array, default `[]`) of:
-    - `icon` (string, default `"🚓"`)
-    - `callSign` (string, e.g. `"GULL-11"`)
+  - `units` (array, default `[]`, first 4 shown) of:
+    - `callSign` or `callsign` (string, e.g. `"GULL-11"`)
     - `distance` (number metres)
     - `tag` (string: `RAMMING|PIT|FLANKING|ROADBLOCK|SPOTLIGHT|PURSUIT|SEARCHING`)
+    - `type` (string, optional: `cruiser|interceptor|armoured|helicopter`) – selects canvas icon (otherwise inferred from callsign/tag).
   - `more` (number, default remaining beyond 4 shown) – "+N more" count.
+  - `roadblock` (boolean, optional) – forces "ROADBLOCK AHEAD" footer (also shown if any unit tag is ROADBLOCK).
 
 ## Wanted/status (`wanted`)
 - `state.wanted.searching` (boolean, default `false`) – flashes stars during search.
 - `state.wanted.status` or `state.statusLine` (string, optional) – e.g. `"AIR UNIT OVERHEAD"`, `"LOST THEM IN 0:12"`.
+- `state.wanted.heat` or `state.wanted.progress` (number 0-1, optional) – progress toward next star for HEAT meter. Falls back to fractional part of `player.wanted` if > current whole stars.
 
 ## Weapons (`weapons`, `activeWeapon`)
 - `state.weapons` (array, optional; defaults to 6 built-in slots) of:
@@ -74,7 +77,8 @@ Every widget reads only from the `state` object passed to `update(state)` (plus 
   - `target` ({`x`,`z`} | null) – mission target blip (yellow).
   - `shops` (array of {`x`,`z`,`letter`/`label`}) – shop letter blips.
   - `police` (array of {`x`,`z`,`yaw`/`heading`}) – red/blue flashing dots with vision cones.
-- `setMapData({roads, blocks, water})` called on system/minimap: each array of simple rectangles in world metres. Accepted rect forms: `{x,z,w,h|d}` or `{x,z,width,height|depth}` or `{x,z,size}` or `{x1,z1,x2,z2}`.
+- `setMapData({roads, blocks, water, districts?, labels?})` called on system/minimap: roads/blocks/water are arrays of simple rectangles in world metres. Accepted rect forms: `{x,z,w,h|d}` or `{x,z,width,height|depth}` or `{x,z,size}` or `{x1,z1,x2,z2}`.
+  - `districts` or `labels` (array of {`name`/`label`,`x`,`z`}, optional) – district label positions; defaults to real districts (Marigold Beach, Old Pier, Glasswater Heights, Ferro Docks, Cinder Hills, Lagoon Bridge).
 
 ## Radio (`radio`)
 - `state.radio` (string or object|falsey)

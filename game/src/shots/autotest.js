@@ -6,9 +6,21 @@ export function setupAutotest(ctx) {
   const out = { started: true, steps: {}, errors: 0 };
   let phase = 0, timer = 0, startPos = null, targetCar = null, trafficCheck = null;
 
+  function publish() {
+    try {
+      const text = 'AUTOTEST ' + JSON.stringify(out);
+      document.title = text;
+      let el = document.getElementById('autotest-out');
+      if (!el) { el = document.createElement('pre'); el.id = 'autotest-out'; el.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99999;color:#0f0;background:#000;padding:4px;font:12px monospace;white-space:pre-wrap;max-width:100vw'; document.body.appendChild(el); }
+      el.textContent = text;
+      window.__autotest = out;
+    } catch (e) {}
+  }
+
   function logStep(name, ok, extra = {}) {
     out.steps[name] = { ok: !!ok, ...extra };
-    console.log('AUTOTEST_STEP', name, ok ? 'OK' : 'FAIL', JSON.stringify(extra));
+    try { console.log('AUTOTEST_STEP', name, ok ? 'OK' : 'FAIL', JSON.stringify(extra)); } catch (e) {}
+    publish();
   }
 
   function nearestTraffic() {
@@ -28,8 +40,9 @@ export function setupAutotest(ctx) {
     out.policeCars = state.police && state.police.units ? state.police.units.cars.length : 0;
     out.dispatch = state.dispatch && state.dispatch.units ? state.dispatch.units.length : 0;
     out.mode = state.mode;
-    console.log('AUTOTEST_RESULT', JSON.stringify(out));
-    window.__autotest = out;
+    out.done = true;
+    try { console.log('AUTOTEST_RESULT', JSON.stringify(out)); } catch (e) {}
+    publish();
     phase = 999;
   }
 

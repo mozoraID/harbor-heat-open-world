@@ -23,8 +23,8 @@ export function createHudSystem(rootEl) {
 
   const topLeft = el('div', 'hh-top-left');
   const topRight = el('div', 'hh-top-right hh-panel hh-accent-mint');
-  topRight.style.padding = '8px 12px';
-  topRight.style.minWidth = '240px';
+  topRight.style.padding = '8px 10px';
+  topRight.style.minWidth = '260px';
   const bottomLeft = el('div', 'hh-bottom-left');
   const bottomRight = el('div', 'hh-bottom-right');
   const bottomCenter = el('div', 'hh-bottom-center');
@@ -35,21 +35,26 @@ export function createHudSystem(rootEl) {
   const mission = createMissionPanel(topLeft);
   const dispatch = createDispatchPanel(topLeft);
   const moneyClock = createMoneyClock(topRight);
+  const weapon = createWeaponBar(topRight); // moved to top-right under money/stars/heat
   const notifications = createNotifications(root);
 
   const minimap = createMinimap(bottomLeft);
   const vitals = createVitals(bottomLeft);
 
+  // rank above speedometer on bottom-right to avoid overlap
+  const rankMount = el('div');
+  rankMount.style.marginBottom = '8px';
+  bottomRight.appendChild(rankMount);
+  const rank = createRankBar(rankMount);
   const speedo = createSpeedometer(bottomRight);
-  const rank = createRankBar(root);
+
   const radio = createRadioToast(root);
-  const weapon = createWeaponBar(root);
-  const dialogue = createDialogueBox(bottomCenter);
+  const dialogue = createDialogueBox(bottomCenter); // bottom center freed
   const banner = createDistrictBanner(centerTop);
   const crosshair = createCrosshair(root);
   const interact = createInteractPrompt(root);
 
-  const widgets = [mission, dispatch, moneyClock, notifications, minimap, vitals, speedo, rank, radio, weapon, dialogue, banner, crosshair, interact];
+  const widgets = [mission, dispatch, moneyClock, weapon, notifications, minimap, vitals, rank, speedo, radio, dialogue, banner, crosshair, interact];
 
   function update(state) {
     if (!state) return;

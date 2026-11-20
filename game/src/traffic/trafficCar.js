@@ -53,12 +53,13 @@ export function updateTrafficCar(car, dt, state, graph, cars) {
   const side = Math.abs(vx * Math.cos(car.yaw) - vz * Math.sin(car.yaw));
   const d2 = vx * vx + vz * vz;
   const inFront = fwd > 0 && fwd < 16 && side < 2.8;
-  const near = d2 < 36;
-  if (inFront) desired = 0;
-  else if (near) desired = Math.min(desired, 1.5);
+  const veryClose = d2 < 25;
+  if (state.player && !state.player.inCar && (inFront || (fwd > -1 && fwd < 10 && side < 3.5))) desired = 0;
+  else if (inFront) desired = 0;
+  else if (veryClose) desired = Math.min(desired, 1.0);
   // mild lateral nudge when player stands in road close ahead
-  if (state.player && !state.player.inCar && inFront && fwd < 9) {
-    car.mesh.position.x += (vx * Math.cos(car.yaw) - vz * Math.sin(car.yaw) > 0 ? -1 : 1) * 0.03;
+  if (state.player && !state.player.inCar && inFront && fwd < 10) {
+    car.mesh.position.x += (vx * Math.cos(car.yaw) - vz * Math.sin(car.yaw) > 0 ? -1 : 1) * 0.04;
   }
 
   car.speed += (desired - car.speed) * Math.min(1, dt * 2.5);

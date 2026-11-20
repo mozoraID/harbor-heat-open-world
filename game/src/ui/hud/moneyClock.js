@@ -1,4 +1,4 @@
-// Money with count-up animation, clock, wanted stars mount point, and status line.
+// Money with count-up animation, clock, wanted stars/heat, and status line.
 import { el, fmtMoney, fmtClock } from './utils.js';
 import { createWantedStars } from './wantedStars.js';
 
