@@ -7,7 +7,6 @@
   <style>
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #87b8d8; }
     canvas { display: block; }
-    #info { position: fixed; left: 10px; top: 10px; color: #fff; font: 12px/1.4 "Segoe UI", Arial, sans-serif; background: rgba(0,0,0,0.35); padding: 6px 8px; border-radius: 6px; }
   </style>
   <script type="importmap">
     {
@@ -18,7 +17,6 @@
   </script>
 </head>
 <body>
-  <div id="info">Landmarks preview (ground + sky + fixed camera)</div>
   <script type="module">
     import * as THREE from 'three';
     import { createLayout } from './src/world/layout.js';
@@ -28,69 +26,74 @@
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(COLORS.skyTop, 1);
+    renderer.setClearColor(0x87ceeb, 1);
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(COLORS.skyTop);
-    scene.fog = new THREE.Fog(COLORS.fog, 250, 1200);
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.Fog(0xcfe8f5, 300, 1400);
 
-    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2500);
 
-    const hemi = new THREE.HemisphereLight(0xfff1d6, 0x6c7a5a, 0.95);
+    const hemi = new THREE.HemisphereLight(0xfff4dc, 0x556b4f, 1.0);
     scene.add(hemi);
-    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-    dir.position.set(120, 220, 80);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+    dir.position.set(180, 260, 120);
     scene.add(dir);
+    const fill = new THREE.DirectionalLight(0xbfdfff, 0.35);
+    fill.position.set(-200, 120, -100);
+    scene.add(fill);
 
-    // Ground planes: city base, sand beach band, ocean
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x7a8b6a });
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), groundMat);
+    // Ground: city base, sand beach band, ocean
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600), new THREE.MeshLambertMaterial({ color: 0x7f9468 }));
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.01;
+    ground.position.y = -0.02;
     scene.add(ground);
 
-    const sand = new THREE.Mesh(new THREE.PlaneGeometry(2000, 220), new THREE.MeshLambertMaterial({ color: COLORS.sand }));
+    const sand = new THREE.Mesh(new THREE.PlaneGeometry(2600, 240), new THREE.MeshLambertMaterial({ color: COLORS.sand || 0xf2d3a3 }));
     sand.rotation.x = -Math.PI / 2;
     sand.position.set(0, 0.01, 360);
     scene.add(sand);
 
-    const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2400, 700), new THREE.MeshLambertMaterial({ color: COLORS.ocean }));
+    const ocean = new THREE.Mesh(new THREE.PlaneGeometry(3000, 900), new THREE.MeshLambertMaterial({ color: COLORS.ocean || 0x2f88a8 }));
     ocean.rotation.x = -Math.PI / 2;
-    ocean.position.set(0, 0.0, 720);
+    ocean.position.set(0, 0.0, 760);
     scene.add(ocean);
 
-    // simple road grid hint
-    const roadMat = new THREE.MeshLambertMaterial({ color: COLORS.road });
     const layout = createLayout(() => 0.5);
-    const roads = new THREE.Group();
-    const vRoad = new THREE.BoxGeometry(layout.roadWidth, 0.05, layout.depth);
+
+    // Simple road grid hint
+    const roadMat = new THREE.MeshLambertMaterial({ color: 0x3b4048 });
+    const vRoad = new THREE.BoxGeometry(layout.roadWidth, 0.06, layout.depth);
     for (let i = 0; i <= layout.n; i++) {
       const x = layout.offsetX + i * layout.cell + layout.roadWidth / 2;
       const m = new THREE.Mesh(vRoad, roadMat);
       m.position.set(x, 0.03, 0);
-      roads.add(m);
+      scene.add(m);
     }
-    const hRoad = new THREE.BoxGeometry(layout.width, 0.05, layout.roadWidth);
+    const hRoad = new THREE.BoxGeometry(layout.width, 0.06, layout.roadWidth);
     for (let j = 0; j <= layout.n; j++) {
       const z = layout.offsetZ + j * layout.cell + layout.roadWidth / 2;
       const m = new THREE.Mesh(hRoad, roadMat);
       m.position.set(0, 0.03, z);
-      roads.add(m);
+      scene.add(m);
     }
-    scene.add(roads);
 
     const rng = () => Math.random();
-    const landmarks = addLandmarks(scene, layout, rng);
+    let landmarks = null;
+    try {
+      landmarks = addLandmarks(scene, layout, rng);
+    } catch (e) {
+      console.error('landmarks error', e);
+    }
 
-    // Fixed orbit-ish camera sweeping to show all landmarks
-    let t = 0;
-    function updateCamera(time) {
-      const a = time * 0.00012;
-      const radius = 520;
-      const cx = 20, cz = 80;
-      camera.position.set(cx + Math.cos(a) * radius, 220 + Math.sin(a * 0.7) * 20, cz + Math.sin(a) * radius * 0.9);
-      camera.lookAt(0, 20, 120);
+    // Fixed orbit-ish camera (starts angled toward pier/beach/bridge area)
+    function updateCamera(now) {
+      const a = 0.8 + now * 0.00012; // start at a nice angle
+      const radius = 560;
+      const cx = -20, cz = 120;
+      camera.position.set(cx + Math.cos(a) * radius, 210 + Math.sin(a * 0.6) * 25, cz + Math.sin(a) * radius);
+      camera.lookAt(-20, 15, 140);
     }
 
     let last = performance.now();

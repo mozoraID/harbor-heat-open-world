@@ -92,13 +92,13 @@ export function stageChaseShot({ app, state, player }) {
   state.player.x = heroX; state.player.z = laneZ;
 
   const sirens = [];
-  // Two flanking cruisers 6-9m behind, ~3.5m to each side, fully readable
-  const p1 = createCar(app.scene, { x: heroX - 7.5, z: laneZ - 3.5, yaw: yaw + 0.03, type: 'police', color: '#f3f4f6', name: 'SHP Cruiser', maxSpeed: 30, driver: 'police' });
-  p1.speed = 37;
-  const p2 = createCar(app.scene, { x: heroX - 8.5, z: laneZ + 3.5, yaw: yaw - 0.03, type: 'police', color: '#f3f4f6', name: 'SHP Cruiser', maxSpeed: 30, driver: 'police' });
-  p2.speed = 37.5;
+  // Two cruisers between camera and player in left/right lanes, 4m and 6m behind, light bars lit
+  const p1 = createCar(app.scene, { x: heroX - 4, z: laneZ - 3.2, yaw: yaw + 0.03, type: 'police', color: '#f3f4f6', name: 'SHP Cruiser', maxSpeed: 30, driver: 'police' });
+  p1.speed = 38.5;
+  const p2 = createCar(app.scene, { x: heroX - 6, z: laneZ + 3.2, yaw: yaw - 0.03, type: 'police', color: '#f3f4f6', name: 'SHP Cruiser', maxSpeed: 30, driver: 'police' });
+  p2.speed = 38.2;
   // One more cruiser further back
-  const p3 = createCar(app.scene, { x: heroX - 18, z: laneZ + 0.6, yaw, type: 'police', color: '#f3f4f6', name: 'SHP Cruiser', maxSpeed: 30, driver: 'police' });
+  const p3 = createCar(app.scene, { x: heroX - 16, z: laneZ + 0.6, yaw, type: 'police', color: '#f3f4f6', name: 'SHP Cruiser', maxSpeed: 30, driver: 'police' });
   p3.speed = 36;
   // MARLIN-1 ahead on the side
   const marlin = createCar(app.scene, { x: heroX + 14, z: laneZ + 3.8, yaw: yaw - 0.1, type: 'police', color: '#f3f4f6', name: 'MARLIN Interceptor', maxSpeed: 32, driver: 'police' });
@@ -122,29 +122,30 @@ export function stageChaseShot({ app, state, player }) {
   const barrier = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.45, 0.25), new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xff9900, emissiveIntensity: 0.25 }));
   barrier.position.set(blockX, 0.9, laneZ - 3.8); app.scene.add(barrier);
 
-  // HERON-1 in upper middle of frame (~18m up, ~20m ahead)
+  // HERON-1 lowered/moved ahead so whole body and rotor sit in upper third of frame
   const heli = createHelicopter(app.scene, state, 'HERON-1');
-  heli.mesh.position.set(heroX + 20, 18, laneZ - 0.5);
-  heli.mesh.rotation.y = yaw + 0.25;
+  heli.mesh.position.set(heroX + 32, 10.5, laneZ - 1.5);
+  heli.mesh.rotation.y = yaw + 0.2;
+  heli.mesh.rotation.x = -0.08;
   heli.spot.target.position.set(heroX, 0.5, laneZ);
   heli.spot.intensity = 32;
   heli.spot.angle = Math.PI / 10;
   heli.spot.distance = 220;
-  const spotConeGeo = new THREE.ConeGeometry(5.8, 19, 24, 1, true);
+  const spotConeGeo = new THREE.ConeGeometry(5.2, 12, 24, 1, true);
   const spotConeMat = new THREE.MeshBasicMaterial({ color: 0xfff6d5, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide });
   const spotCone = new THREE.Mesh(spotConeGeo, spotConeMat);
-  spotCone.position.set(0, -9.5, 0);
+  spotCone.position.set(0, -6, 0);
   heli.spot.add(spotCone);
 
-  // Burning wreck with real fireball at roadside on the right, 25m ahead
-  const wreckX = heroX + 25;
-  const wreckZ = laneZ + 5.8;
-  const wreck = createCar(app.scene, { x: wreckX, z: wreckZ, yaw: yaw + 0.55, type: 'sedan', color: '#2f2f2f', name: 'Wreck', driver: null });
+  // Burning wreck moved onto sand at right roadside so BULWARK roadblock ~50m ahead stays visible
+  const wreckX = heroX + 26;
+  const wreckZ = laneZ + 11.5;
+  const wreck = createCar(app.scene, { x: wreckX, z: wreckZ, yaw: yaw + 0.7, type: 'sedan', color: '#2f2f2f', name: 'Wreck', driver: null });
   wreck.damage = 1; wreck.dead = true; wreck.speed = 0; wreck.exploded = true;
-  wreck.mesh.rotation.z = 0.18; wreck.mesh.position.y = -0.05;
+  wreck.mesh.rotation.z = 0.22; wreck.mesh.position.y = -0.02;
   state.cars.push(wreck);
   const explosion = createCarExplosion(app.scene, wreckX, wreckZ);
-  explosion.group.scale.setScalar(1.15);
+  explosion.group.scale.setScalar(1.1);
 
   // Tyre smoke and speed lines for hero
   const speedLines = addSpeedLines(app.scene, hero);
@@ -184,9 +185,9 @@ export function stageChaseShot({ app, state, player }) {
   ];
   state.minimap.target = { x: heroX, z: laneZ - 150 };
 
-  const camPos = new THREE.Vector3(heroX - 7, 2.6, laneZ);
-  const lookAt = new THREE.Vector3(heroX + 18, 1.1, laneZ);
-  pushCameraOut(camPos, new THREE.Vector3(heroX, 2.6, laneZ), state.colliders || [], state.world.bounds);
+  const camPos = new THREE.Vector3(heroX - 10, 3.5, laneZ);
+  const lookAt = new THREE.Vector3(heroX + 18, 1.2, laneZ);
+  pushCameraOut(camPos, new THREE.Vector3(heroX, 3.5, laneZ), state.colliders || [], state.world.bounds);
 
   return {
     camera: { position: camPos.clone(), lookAt: lookAt.clone(), fov: 70 },
@@ -228,11 +229,11 @@ export function stageChaseShot({ app, state, player }) {
         p.m.material.opacity = (1 - cycle) * 0.22;
       }
 
-      const desired = new THREE.Vector3(hero.mesh.position.x - 7, 2.6, hero.mesh.position.z);
-      const tgt = new THREE.Vector3(hero.mesh.position.x + 18, 1.1, hero.mesh.position.z);
+      const desired = new THREE.Vector3(hero.mesh.position.x - 10, 3.5, hero.mesh.position.z);
+      const tgt = new THREE.Vector3(hero.mesh.position.x + 18, 1.2, hero.mesh.position.z);
       pushCameraOut(desired, hero.mesh.position, state.colliders || [], state.world.bounds);
-      desired.y = 2.6;
-      if (desired.x > hero.mesh.position.x - 5.5) desired.x = hero.mesh.position.x - 5.5;
+      desired.y = 3.5;
+      if (desired.x > hero.mesh.position.x - 8.5) desired.x = hero.mesh.position.x - 8.5;
       this.camera = { position: desired, lookAt: tgt, fov: 70 };
     },
   };

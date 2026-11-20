@@ -1,4 +1,4 @@
-// Entry point: wires core systems, world, actors, vehicles, police, combat, and HUD.
+// Entry point: wires core systems, world, actors, vehicles, police, combat, HUD, and game flow.
 import { createState } from './core/state.js';
 import { createClock } from './core/clock.js';
 import { createApp } from './core/app.js';
@@ -17,12 +17,14 @@ import { createCombatSystem } from './combat/weapons.js';
 import { setupShots } from './shots/shotDirector.js';
 import { buildMapData } from './world/mapData.js';
 import { setupAutotest } from './shots/autotest.js';
+import { createGameFlow } from './flow/gameFlow.js';
 
 function main() {
   const params = new URLSearchParams(window.location.search);
   const shotName = params.get('shot');
   const autotestMode = params.get('autotest') === '1';
   const seed = parseInt(params.get('seed') || '1', 10) || 1;
+  const shotOrAuto = !!(shotName || autotestMode);
   const app = createApp(document.getElementById('app'));
   const state = createState(seed);
   const clock = createClock();
@@ -30,7 +32,8 @@ function main() {
   const hud = createHudSystem(document.getElementById('hud'));
 
   const city = createCity(app.scene, state);
-  hud.setMapData(buildMapData(state.world.layout));
+  const mapData = buildMapData(state.world.layout);
+  hud.setMapData(mapData);
   state.cars = parkCars(app.scene, state.world.layout, 45, state.rng);
   state.effects = createEffects(app.scene);
   state.traffic = createTraffic(app.scene, state, 30);
@@ -41,19 +44,26 @@ function main() {
 
   let shotCtrl = null;
   let autoCtrl = null;
+  let flow = null;
+
   if (shotName) {
     shotCtrl = setupShots(shotName, { app, state, city, player, hud, seed, input });
-  } else {
-    state.mode = 'play';
   }
   if (autotestMode) {
     state.mode = 'play';
     shotCtrl = null;
     autoCtrl = setupAutotest({ app, state, city, player, hud, input, seed });
   }
+  if (!shotOrAuto) {
+    flow = createGameFlow({
+      state, hud, input,
+      scene: app.scene, camera: app.camera, renderer: app.renderer,
+      player, cars: state.cars, city, mapData,
+    });
+  }
 
   function syncHud(prompt) {
-    state.interact = prompt || null;
+    if (prompt !== undefined) state.interact = prompt || null;
     if (state.player.inCar && state.car) {
       state.speed = Math.abs(state.car.speed);
       state.car.condition = Math.max(0, Math.round(100 - (state.car.damage || 0) * 100));
@@ -61,7 +71,7 @@ function main() {
       state.speed = state.player.speed || 0;
     }
     if (!state.radio) state.radio = { station: 'WAVE 101.7', genre: 'Coastline Pop', track: 'Sunset Run', visible: true };
-    if (!state.mission) state.mission = { number: 1, act: 'ACT I', title: 'Harbor Heat', stage: 1, stageTotal: 1, objective: state.hud.objective };
+    if (!state.mission) state.mission = { number: 1, act: 'ACT I', title: 'Harbor Heat', stage: 1, stageTotal: 1, objective: state.hud && state.hud.objective ? state.hud.objective : 'Explore Port Solenne' };
     hud.update(state);
   }
 
@@ -81,7 +91,7 @@ function main() {
     }
     state.dispatch = { visible: false, stars: 0, units: [], more: 0 };
     state.wanted = { searching: false, status: '' };
-    state.hud.objective = 'Respawned in Marigold Beach. Stay out of trouble.';
+    if (state.hud) state.hud.objective = 'Respawned in Marigold Beach. Stay out of trouble.';
     state.respawn = { state: null, timer: 0, label: '' };
   }
 
@@ -102,10 +112,20 @@ function main() {
   function simulate(dt) {
     state.time += dt;
     input.update();
+    if (flow) flow.update(dt);
+
+    if (flow && !flow.isPlaying()) {
+      if (state.traffic) state.traffic.update(dt, state);
+      if (state.pedestrians) state.pedestrians.update(dt, state);
+      if (state.effects) state.effects.update(dt);
+      city.update(dt, state);
+      syncHud(null);
+      return;
+    }
 
     if (state.respawn.state) {
       state.respawn.timer -= dt;
-      state.hud.objective = state.respawn.label + ' - Respawning...';
+      if (state.hud) state.hud.objective = state.respawn.label + ' - Respawning...';
       if (state.respawn.timer <= 0) doRespawn();
       if (state.traffic) state.traffic.update(dt, state);
       if (state.pedestrians) state.pedestrians.update(dt, state);
@@ -117,7 +137,9 @@ function main() {
       return;
     }
 
-    if (input.consumeEnter()) tryToggleVehicle(state);
+    const enter = input.consumeEnter();
+    if (flow) flow.handleEnter(enter);
+    if (enter) tryToggleVehicle(state);
     updateVehicleActions(dt, state, app.scene);
     updateFleeingDrivers(dt, state, app.scene);
 

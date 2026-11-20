@@ -223,9 +223,18 @@ export function createGameFlow(ctx = {}) {
   function buildPauseState() {
     const xp = state?.progression?.respectXP ?? 0;
     const prog = getRankProgress(xp);
+    const districts = [
+      { name: 'Marigold Beach', x: -87, z: 290 },
+      { name: 'Old Pier', x: -261, z: 261 },
+      { name: 'Ferro Docks', x: -261, z: -261 },
+      { name: 'Cinder Hills', x: 261, z: -261 },
+      { name: 'Lagoon Bridge', x: 0, z: 0 },
+      { name: 'Glasswater Heights', x: 261, z: 261 },
+    ];
     return {
       ...state,
       player: state?.player,
+      districts,
       rank: { name: prog.name, xp, next: prog.next },
       completedMissions: mission.getCompleted(),
       missionGroups: mission.getMissionGroupsWithStatus(),
@@ -249,7 +258,7 @@ export function createGameFlow(ctx = {}) {
   }
 
   function handleMissionPassed(payload, updatedSave) {
-    if (overlay) return;
+    if (overlay === 'missionPassed') return;
     overlay = 'missionPassed';
     const r = payload?.reward || {};
     missionPassed.show({ cash: r.money || 0, respect: r.respect || 0 });
@@ -341,10 +350,12 @@ export function createGameFlow(ctx = {}) {
     // if paused/phone, keep HUD/overlays reactive but don't run gameplay bridges hard? bridges are cheap
     if (mode === 'pause') {
       pause.update(buildPauseState());
+      audio.update(dt, state);
       return;
     }
     if (mode === 'phone') {
       phone.update(buildPhoneState());
+      audio.update(dt, state);
       return;
     }
 
@@ -367,9 +378,13 @@ export function createGameFlow(ctx = {}) {
     }
 
     // detect wasted/busted from state
-    const rs = state?.respawn?.state || (state?.player?.health <= 0 ? 'wasted' : null);
+    const rs = state?.respawn?.state || (state?.player?.health <= 0 ? 'wasted' : (state?.player?.busted ? 'busted' : null));
     if (rs === 'wasted' && lastRespawnState !== 'wasted') showWasted();
     if (rs === 'busted' && lastRespawnState !== 'busted') showBusted();
+    // clear overlays when respawn finished
+    if (!rs && (overlay === 'wasted' || overlay === 'busted')) {
+      wasted.hide(); busted.hide(); overlay = null;
+    }
     lastRespawnState = rs;
 
     // mission passed handled via callback; also detect external flag
