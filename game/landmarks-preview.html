@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Landmarks Preview</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #87b8d8; }
+    canvas { display: block; }
+    #info { position: fixed; left: 10px; top: 10px; color: #fff; font: 12px/1.4 "Segoe UI", Arial, sans-serif; background: rgba(0,0,0,0.35); padding: 6px 8px; border-radius: 6px; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three.module.min.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="info">Landmarks preview (ground + sky + fixed camera)</div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { createLayout } from './src/world/layout.js';
+    import { addLandmarks } from './src/landmarks/index.js';
+    import { COLORS } from './src/core/constants.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(COLORS.skyTop, 1);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(COLORS.skyTop);
+    scene.fog = new THREE.Fog(COLORS.fog, 250, 1200);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+    const hemi = new THREE.HemisphereLight(0xfff1d6, 0x6c7a5a, 0.95);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+    dir.position.set(120, 220, 80);
+    scene.add(dir);
+
+    // Ground planes: city base, sand beach band, ocean
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x7a8b6a });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    scene.add(ground);
+
+    const sand = new THREE.Mesh(new THREE.PlaneGeometry(2000, 220), new THREE.MeshLambertMaterial({ color: COLORS.sand }));
+    sand.rotation.x = -Math.PI / 2;
+    sand.position.set(0, 0.01, 360);
+    scene.add(sand);
+
+    const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2400, 700), new THREE.MeshLambertMaterial({ color: COLORS.ocean }));
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.set(0, 0.0, 720);
+    scene.add(ocean);
+
+    // simple road grid hint
+    const roadMat = new THREE.MeshLambertMaterial({ color: COLORS.road });
+    const layout = createLayout(() => 0.5);
+    const roads = new THREE.Group();
+    const vRoad = new THREE.BoxGeometry(layout.roadWidth, 0.05, layout.depth);
+    for (let i = 0; i <= layout.n; i++) {
+      const x = layout.offsetX + i * layout.cell + layout.roadWidth / 2;
+      const m = new THREE.Mesh(vRoad, roadMat);
+      m.position.set(x, 0.03, 0);
+      roads.add(m);
+    }
+    const hRoad = new THREE.BoxGeometry(layout.width, 0.05, layout.roadWidth);
+    for (let j = 0; j <= layout.n; j++) {
+      const z = layout.offsetZ + j * layout.cell + layout.roadWidth / 2;
+      const m = new THREE.Mesh(hRoad, roadMat);
+      m.position.set(0, 0.03, z);
+      roads.add(m);
+    }
+    scene.add(roads);
+
+    const rng = () => Math.random();
+    const landmarks = addLandmarks(scene, layout, rng);
+
+    // Fixed orbit-ish camera sweeping to show all landmarks
+    let t = 0;
+    function updateCamera(time) {
+      const a = time * 0.00012;
+      const radius = 520;
+      const cx = 20, cz = 80;
+      camera.position.set(cx + Math.cos(a) * radius, 220 + Math.sin(a * 0.7) * 20, cz + Math.sin(a) * radius * 0.9);
+      camera.lookAt(0, 20, 120);
+    }
+
+    let last = performance.now();
+    function frame(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      if (landmarks && landmarks.update) landmarks.update(dt);
+      updateCamera(now);
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
