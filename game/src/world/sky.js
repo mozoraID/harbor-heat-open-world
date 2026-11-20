@@ -27,9 +27,11 @@ export function createSky(scene) {
         float h = clamp(dir.y, 0.0, 1.0);
         vec3 col = mix(horizon, mid, smoothstep(0.0, 0.35, h));
         col = mix(col, top, smoothstep(0.25, 1.0, h));
-        float sun = max(dot(dir, normalize(sunDir)), 0.0);
-        col += glow * pow(sun, 32.0) * 0.9 + glow * pow(sun, 256.0) * 1.4;
-        if (dir.y < 0.0) col = mix(horizon, vec3(0x3a/255.0,0x6f/255.0,0x8f/255.0), clamp(-dir.y*1.4,0.0,1.0));
+        float s = max(dot(dir, normalize(sunDir)), 0.0);
+        col += glow * pow(s, 32.0) * 0.9 + glow * pow(s, 256.0) * 1.4;
+        float below = clamp(-dir.y * 1.4, 0.0, 1.0);
+        vec3 sea = vec3(58.0/255.0, 111.0/255.0, 143.0/255.0);
+        col = mix(col, mix(horizon, sea, below), step(dir.y, 0.0) * below);
         gl_FragColor = vec4(col, 1.0);
       }
     `,

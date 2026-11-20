@@ -33,7 +33,10 @@ export function setupShots(name, ctx) {
       // keep HUD in sync with staged state
       const hudExtra = ctrl.hudExtra ? ctrl.hudExtra() : { timeLabel: '18:42 Golden Hour' };
       if (ctrl.prompt !== undefined) hudExtra.prompt = ctrl.prompt;
-      ctx.hud.update(ctx.state, hudExtra);
+      ctx.state.interact = hudExtra.prompt || null;
+      ctx.state.timeOfDay = hudExtra.timeLabel || ctx.state.timeOfDay || '18:42';
+      if (ctx.state.car) ctx.state.speed = Math.abs(ctx.state.car.speed || 0);
+      ctx.hud.update(ctx.state);
 
       // camera control
       if (ctrl.camera) {
