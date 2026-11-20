@@ -60,10 +60,16 @@ export function createMinimap(root) {
     const pz = state.player?.z ?? 0;
     const heading = (state.player?.inCar && state.car?.yaw != null) ? state.car.yaw : (state.player?.yaw ?? 0);
     const scale = 0.5; // px per world meter
+    const mapRotation = heading + Math.PI;
+    const cosR = Math.cos(mapRotation), sinR = Math.sin(mapRotation);
+    const uprightLabels = [];
+    function rotatedPoint(p) {
+      return { x: p.x * cosR - p.y * sinR, y: p.x * sinR + p.y * cosR };
+    }
 
     // beach sand hint band (south, large +z in world) drawn in world space then rotated
     ctx.save();
-    ctx.rotate(-heading);
+    ctx.rotate(mapRotation);
     // subtle sand area
     ctx.fillStyle = '#cdb176';
     ctx.globalAlpha = 0.22;
@@ -103,19 +109,15 @@ export function createMinimap(root) {
       }
     }
 
-    // district labels
+    // district labels are drawn upright after the map transform is restored
     const labels = mapData.districts && mapData.districts.length ? mapData.districts : DISTRICT_LABELS;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '700 18px "Segoe UI", Arial';
     for (const d of labels) {
       const dx = Number(d.x ?? 0), dz = Number(d.z ?? 0);
       const p = worldToMap(dx, dz, px, pz, scale);
       if (p.x * p.x + p.y * p.y > (r - 10) * (r - 10)) continue;
       const name = String(d.name || d.label || '').toUpperCase();
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-      ctx.strokeText(name, p.x, p.y);
-      ctx.fillStyle = 'rgba(240,248,255,0.78)';
-      ctx.fillText(name, p.x, p.y);
+      const rp = rotatedPoint(p);
+      uprightLabels.push({ text: name, x: rp.x, y: rp.y, kind: 'district' });
     }
 
     // mission target
@@ -130,14 +132,11 @@ export function createMinimap(root) {
     }
     // shops
     if (Array.isArray(mm.shops)) {
-      ctx.font = '900 16px "Segoe UI", Arial';
       for (const s of mm.shops) {
         const sp = worldToMap(s.x, s.z, px, pz, scale);
         if (sp.x * sp.x + sp.y * sp.y < r * r) {
-          ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-          ctx.strokeText(String(s.letter || s.label || 'S'), sp.x, sp.y);
-          ctx.fillStyle = '#3ee6b0';
-          ctx.fillText(String(s.letter || s.label || 'S'), sp.x, sp.y);
+          const rp = rotatedPoint(sp);
+          uprightLabels.push({ text: String(s.letter || s.label || 'S'), x: rp.x, y: rp.y, kind: 'shop' });
         }
       }
     }
@@ -150,7 +149,7 @@ export function createMinimap(root) {
         const ang = p.yaw ?? p.heading ?? 0;
         // vision cone
         ctx.save();
-        ctx.translate(bp.x, bp.y); ctx.rotate(ang);
+        ctx.translate(bp.x, bp.y); ctx.rotate(ang + mapRotation);
         ctx.fillStyle = flash ? 'rgba(255,70,70,0.22)' : 'rgba(80,160,255,0.22)';
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 34, -0.42, 0.42); ctx.closePath(); ctx.fill();
         ctx.restore();
@@ -160,6 +159,17 @@ export function createMinimap(root) {
       }
     }
     ctx.restore(); // unrotate world
+
+    // text labels stay upright on screen at their rotated map positions
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const l of uprightLabels) {
+      const shop = l.kind === 'shop';
+      ctx.font = (shop ? '900 16px' : '700 18px') + ' "Segoe UI", Arial';
+      ctx.lineWidth = 3; ctx.strokeStyle = shop ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.55)';
+      ctx.strokeText(l.text, l.x, l.y);
+      ctx.fillStyle = shop ? '#3ee6b0' : 'rgba(240,248,255,0.78)';
+      ctx.fillText(l.text, l.x, l.y);
+    }
 
     // player arrow (fixed up/forward)
     ctx.fillStyle = '#ffffff';
@@ -180,10 +190,10 @@ export function createMinimap(root) {
     // compass letters on ring (N rotates with world north)
     const cx = w / 2, cy = h / 2;
     const dirs = [
-      { l: 'N', a: -heading - Math.PI / 2 },
-      { l: 'E', a: -heading },
-      { l: 'S', a: -heading + Math.PI / 2 },
-      { l: 'W', a: -heading + Math.PI },
+      { l: 'N', a: heading + Math.PI / 2 },
+      { l: 'E', a: heading + Math.PI },
+      { l: 'S', a: heading - Math.PI / 2 },
+      { l: 'W', a: heading },
     ];
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const d of dirs) {

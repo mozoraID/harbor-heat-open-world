@@ -38,6 +38,14 @@ function placeOnEdge(car) {
 }
 
 export function updateTrafficCar(car, dt, state, graph, cars) {
+  if (car.driver === 'player') return;
+  if (car.hijacked) {
+    if (state.player && state.player.action === 'steal' && state.player.actionTarget === car) {
+      car.speed = 0;
+      return;
+    }
+    car.hijacked = false;
+  }
   // simple traffic light stop near nodes
   const { a, b } = car.edge;
   const dx = b.x - a.x, dz = b.z - a.z;

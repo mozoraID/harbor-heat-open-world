@@ -33,13 +33,21 @@ export function tryToggleVehicle(state) {
     state.hud.objective = 'On foot in ' + state.districtName + '. Find another ride.';
     return true;
   }
-  const car = findNearestCar(state);
+  let car = findNearestCar(state);
+  if (!car || (car.traffic && car.driver && car.driver !== 'player')) {
+    const traffic = findNearestCar(state, 7);
+    if (traffic && traffic.traffic && traffic.driver && traffic.driver !== 'player') car = traffic;
+  }
   if (!car || car.dead) return false;
   if (car.driver && car.driver !== 'player') {
     p.action = 'steal';
     p.actionTime = 0.8;
     p.actionTarget = car;
     car.speed = 0;
+    car.hijacked = true;
+    p.x = car.mesh.position.x + Math.cos(car.yaw) * 2.1;
+    p.z = car.mesh.position.z - Math.sin(car.yaw) * 2.1;
+    p.y = 0;
     state.hud.objective = 'Pulling driver out of ' + car.name + '...';
     return true;
   }
@@ -54,11 +62,19 @@ export function updateVehicleActions(dt, state, scene) {
   const p = state.player;
   if (p.action === 'steal') {
     p.actionTime -= dt;
+    const heldCar = p.actionTarget;
+    if (heldCar && heldCar.mesh) {
+      p.x = heldCar.mesh.position.x + Math.cos(heldCar.yaw) * 2.1;
+      p.z = heldCar.mesh.position.z - Math.sin(heldCar.yaw) * 2.1;
+      p.y = 0;
+      heldCar.speed = 0;
+    }
     if (p.actionTime <= 0) {
       const car = p.actionTarget;
       if (car) {
         spawnFleeingDriver(scene, state, car);
         car.driver = 'player';
+        car.hijacked = false;
         p.inCar = car;
         state.car = car;
         if (state.police && state.police.reportCrime) state.police.reportCrime('steal', state.time);
