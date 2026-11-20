@@ -81,11 +81,15 @@ export function createGameFlow(ctx = {}) {
   function currentSaveSnapshot() {
     const xp = state?.progression?.respectXP ?? 0;
     const rank = getRankProgress(xp);
+    const completed = mission.getCompleted();
+    const totalMissions = mission.getMissionGroupsWithStatus().reduce((n, g) => n + (g.missions?.length || 0), 0);
     return normalizeSlot({
       money: state?.player?.money ?? 0,
       respectXP: xp,
       rank: rank.name,
-      completedMissions: mission.getCompleted(),
+      completedMissions: completed,
+      activeMissionId: mission.getRunner().getActiveMission()?.id || null,
+      missionPercent: totalMissions ? Math.round((completed.length / totalMissions) * 100) : 0,
       unlockedWeapons: state?.unlockedWeapons || ['fists', 'bat', 'pistol', 'smg'],
       ownedCars: state?.ownedCars || [],
       playerPosition: { x: state?.player?.x ?? 0, y: state?.player?.y ?? 0, z: state?.player?.z ?? 0 },

@@ -25,7 +25,6 @@ export function stageTitleShot({ app, state, hud, player }) {
   const checklist = createFeatureChecklist(document.body);
   checklist.show();
   checklist.setCompactTitleMode(true);
-  if (new URLSearchParams(location.search).get('debugNoUI') === '1') document.querySelectorAll('.hh-title-screen,.hh-checklist').forEach(e => e.style.display = 'none');
 
   const titleCam = createTitleCamera(app, state);
   titleCam.activate();
