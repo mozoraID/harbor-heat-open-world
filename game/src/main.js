@@ -58,45 +58,68 @@ function main() {
   }
 
   function respawnPlayer(label) {
-    if (state.respawn.timer > 0) return;
-    state.respawn = { state: 'respawning', timer: 2.5, label: label || 'WASTED' };
+    if (state.respawn.state) return;
+    state.respawn = { state: label.toLowerCase(), timer: 3.0, label };
   }
 
   function doRespawn() {
     const p = state.player;
-    if (p.inCar && state.car) { state.car.driver = null; state.car = null; p.inCar = null; }
-    p.health = 100; p.armour = 0; p.dead = false; p.busted = false; p.action = null;
-    p.x = 0; p.z = state.world.layout.depth / 2 - 35; p.y = 0; p.vy = 0; p.yaw = Math.PI;
-    p.wanted = 0;
-    if (state.police && state.police.clearUnits) state.police.clearUnits();
-    if (state.police && state.police.heat) { state.police.heat.heat.value = 0; state.police.heat.heat.stars = 0; state.police.heat.heat.search = 0; }
-    state.dispatch = { visible: false, stars: 0, units: [] };
+    if (p.inCar && state.car) { state.car.driver = null; p.inCar = null; state.car = null; }
+    p.health = 100; p.armour = 0; p.wanted = 0; p.dead = false; p.busted = false; p.action = null; p.actionTime = 0;
+    p.x = 0; p.z = state.world.layout.depth / 2 - 35; p.y = 0; p.vy = 0; p.onGround = true; p.speed = 0; p.yaw = Math.PI;
+    if (state.police) {
+      if (state.police.heat && state.police.heat.heat) { state.police.heat.heat.value = 0; state.police.heat.heat.stars = 0; state.police.heat.heat.search = 0; state.police.heat.heat.lastCrime = 0; }
+      if (state.police.clearUnits) state.police.clearUnits();
+    }
+    state.dispatch = { visible: false, stars: 0, units: [], more: 0 };
     state.wanted = { searching: false, status: '' };
+    state.hud.objective = 'Respawned in Marigold Beach. Stay out of trouble.';
     state.respawn = { state: null, timer: 0, label: '' };
-    state.hud.objective = 'Back on the streets of Marigold Beach.';
+  }
+
+  function checkWastedBusted() {
+    if (state.respawn.state || state.mode !== 'play') return;
+    if (state.player.health <= 0) { respawnPlayer('WASTED'); return; }
+    if (state.player.wanted > 0 && !state.player.inCar && state.police && state.police.units) {
+      for (const c of state.police.units.cars) {
+        if (!c || c.dead || !c.mesh) continue;
+        const dx = c.mesh.position.x - state.player.x;
+        const dz = c.mesh.position.z - state.player.z;
+        const d2 = dx * dx + dz * dz;
+        if (d2 < 25 && Math.abs(c.speed || 0) < 2.5) { respawnPlayer('BUSTED'); return; }
+      }
+    }
   }
 
   function simulate(dt) {
     state.time += dt;
-    if (state.respawn.timer > 0) {
+    input.update();
+
+    if (state.respawn.state) {
       state.respawn.timer -= dt;
-      state.interact = state.respawn.label;
+      state.hud.objective = state.respawn.label + ' - Respawning...';
       if (state.respawn.timer <= 0) doRespawn();
-      syncHud(state.respawn.label);
+      if (state.traffic) state.traffic.update(dt, state);
+      if (state.pedestrians) state.pedestrians.update(dt, state);
+      if (state.effects) state.effects.update(dt);
+      if (state.police) state.police.update(dt, state);
       city.update(dt, state);
       updateCamera(app, state, dt);
+      syncHud(null);
       return;
     }
-    input.update();
-    const slot = input.consumeWeaponSlot();
-    if (slot && state.weapons) { state.player.activeWeapon = slot; state.activeWeapon = slot; }
+
     if (input.consumeEnter()) tryToggleVehicle(state);
     updateVehicleActions(dt, state, app.scene);
     updateFleeingDrivers(dt, state, app.scene);
+
     if (state.player.inCar && state.car) {
       const car = state.car;
-      if (car.dead) { try { state.car.driver = null; state.player.inCar = null; state.car = null; } catch(e){} }
-      else {
+      if (car.dead) {
+        car.driver = null;
+        state.player.inCar = null;
+        state.car = null;
+      } else {
         const ctl = { throttle: input.state.forward, steer: -input.state.right, brake: false, handbrake: input.state.jump };
         if (input.state.forward < 0 && car.speed > 0.6) ctl.throttle = -0.7;
         if (input.state.forward > 0 && car.speed < -0.6) ctl.brake = true;
@@ -105,24 +128,23 @@ function main() {
     } else {
       player.update(dt, input, state.camera.yaw - Math.PI);
     }
+
     if (state.traffic) state.traffic.update(dt, state);
     if (state.pedestrians) state.pedestrians.update(dt, state);
-    if (state.police) state.police.update(dt, state);
     if (state.combat) state.combat.update(dt, state, app.scene, input);
+    if (state.police) state.police.update(dt, state);
     if (state.effects) state.effects.update(dt);
-    // wasted/busted checks
-    if (state.player.health <= 0) { state.player.dead = true; respawnPlayer('WASTED'); }
-    if (!state.player.dead && state.player.wanted >= 1 && !state.player.inCar && state.police) {
-      const nearCop = (state.police.units.cars || []).some(c => { const dx=c.mesh.position.x-state.player.x, dz=c.mesh.position.z-state.player.z; return dx*dx+dz*dz < 36 && Math.abs(c.speed||0) < 1.5; });
-      if (nearCop) respawnPlayer('BUSTED');
-    }
     city.update(dt, state);
+    checkWastedBusted();
     updateCamera(app, state, dt);
+
     let prompt = null;
     if (!state.player.inCar && !state.player.action) {
       const near = findNearestCar(state, 3.2);
       if (near) prompt = 'Press F to ' + (near.driver && near.driver !== 'player' ? 'steal ' : 'enter ') + near.name;
-    } else if (state.player.action === 'steal') prompt = 'Pulling driver out...';
+    } else if (state.player.action === 'steal') {
+      prompt = 'Pulling driver out...';
+    }
     syncHud(prompt);
   }
 

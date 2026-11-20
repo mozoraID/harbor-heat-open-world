@@ -1,179 +1,152 @@
-// Act I mission definitions: Rio returns to Port Solenne to pay Mama Inés's diner debt.
+// Act I mission definitions: Rio returns to Port Solenne to help Mama Inés.
 export const ACT1_MISSIONS = [
   {
-    id: 'first_light',
-    title: 'First Light',
-    giver: 'mama',
-    district: 'Marigold Beach',
-    act: 1,
+    id: 'act1_first_light',
     number: 1,
-    reward: { money: 1200, respect: 150 },
-    unlock: null,
+    title: 'First Light',
+    act: 1,
+    actLabel: 'ACT I',
+    giver: 'mama',
+    giverName: 'Mama Inés',
+    district: 'Marigold Beach',
+    reward: { money: 800, respect: 120 },
+    unlockRequires: [],
     stages: [
       {
         type: 'goto',
-        target: { x: -29, z: 319, radius: 12 },
-        objective: 'Meet Mama Inés outside the diner on Marigold Beach',
-        next: 'Pick up supplies at the pier',
-        dialogueStart: [
-          { speaker: 'Mama Inés', text: 'Mijo, Port Solenne takes what it wants. Victor Kade wants my diner debt paid, or he takes the doors.' },
-          { speaker: 'Rio Vance', text: 'I just got back, Mama. Tell me where to start.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Mama Inés', text: 'Good. Start by proving you still know these streets. Head to Old Pier for the morning delivery.' }
-        ]
+        objective: "Drive to Mama Inés's diner on Marigold Beach",
+        highlight: 'diner',
+        next: 'Pick up the supply crate',
+        target: { x: -30, z: 290, radius: 10 },
+        startDialogue: { speaker: 'Mama Inés', text: "Rio, mijo... you came back. Kade's men are circling the diner. Come see me, quick." },
+        endDialogue: { speaker: 'Rio Vance', text: "I'm here, Mama. Nobody's shutting this place down." },
       },
       {
         type: 'collect',
-        target: { x: -261, z: 261, radius: 10 },
-        item: 'supply crate',
-        objective: 'Collect the supply crate at Old Pier',
-        next: 'Deliver to the diner',
-        dialogueStart: [
-          { speaker: 'Rio Vance', text: 'Old Pier hasn\'t changed a bit. Let\'s grab that crate.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Rio Vance', text: 'Got it. Mama\'s waiting back on the beach.' }
-        ]
+        objective: 'Collect the supply crate behind the diner',
+        highlight: 'crate',
+        next: 'Drop the supplies at Old Pier',
+        target: { x: -10, z: 305, radius: 6 },
+        collectId: 'diner_crate',
+        startDialogue: { speaker: 'Mama Inés', text: "Grab the crate out back. Our pier contact is waiting—those supplies keep us afloat." },
+        endDialogue: { speaker: 'Rio Vance', text: "Got it. Supplies secured." },
       },
       {
         type: 'drive_to',
-        target: { x: 29, z: 319, radius: 12 },
-        objective: 'Deliver the supplies back to Mama\'s diner',
+        objective: 'Deliver the supplies to the Old Pier drop',
+        highlight: 'Pier',
         next: 'Mission complete',
-        dialogueStart: [
-          { speaker: 'Mama Inés', text: 'Bring it straight here, Rio. No detours.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Mama Inés', text: 'You still move quick. This is only the first light — Kade\'s debt runs deep.' },
-          { speaker: 'Rio Vance', text: 'Then I\'ll keep moving.' }
-        ]
-      }
-    ]
+        target: { x: -260, z: 230, radius: 12 },
+        requireCar: false,
+        startDialogue: { speaker: 'Mama Inés', text: "Take them to Old Pier. And Rio—keep your head down." },
+        endDialogue: { speaker: 'Mama Inés', text: "You still got it. That's a start on Kade's debt... but it's only a start." },
+      },
+    ],
   },
   {
-    id: 'tide_breaker',
-    title: 'Tide Breaker',
-    giver: 'wrench',
-    district: 'Ferro Docks',
-    act: 1,
+    id: 'act1_tide_breaker',
     number: 2,
-    reward: { money: 1800, respect: 220 },
-    unlock: ['first_light'],
+    title: 'Tide Breaker',
+    act: 1,
+    actLabel: 'ACT I',
+    giver: 'wrench',
+    giverName: 'Teo "Wrench" Okafor',
+    district: 'Old Pier',
+    reward: { money: 1200, respect: 180 },
+    unlockRequires: ['act1_first_light'],
     stages: [
       {
         type: 'goto',
-        target: { x: -261, z: -203, radius: 12 },
-        objective: 'Meet Wrench at the Ferro Docks garage',
-        next: 'Steal a dock hauler',
-        dialogueStart: [
-          { speaker: 'Teo "Wrench" Okafor', text: 'Rio Vance, back from the dead. Mama says you need cash fast — I got a job that pays in a hurry.' },
-          { speaker: 'Rio Vance', text: 'Talk to me, Wrench.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Teo "Wrench" Okafor', text: 'Kade\'s crew parked a clean hauler by the cranes. Borrow it permanent-like.' }
-        ]
+        objective: "Meet Wrench at his shop near Old Pier",
+        highlight: 'Wrench',
+        next: 'Steal the Bayline Cruiser',
+        target: { x: -200, z: 200, radius: 10 },
+        startDialogue: { speaker: 'Teo "Wrench" Okafor', text: "Rio Vance, back from the dead! I need a favour—and a car. Roll up to my shop." },
+        endDialogue: { speaker: 'Teo "Wrench" Okafor', text: "There he is. Listen, I spotted a clean Bayline Cruiser by the docks." },
       },
       {
         type: 'steal',
-        target: { x: -203, z: -145, radius: 10 },
-        carType: 'Dock Hauler',
-        objective: 'Steal the Dock Hauler near the cranes',
-        next: 'Deliver it to Wrench\'s lockup',
-        dialogueStart: [
-          { speaker: 'Teo "Wrench" Okafor', text: 'Quiet in, loud out if you have to. Just get me that hauler.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Rio Vance', text: 'Hauler secured. Hope this thing floats like you said.' }
-        ]
+        objective: 'Steal the marked Bayline Cruiser',
+        highlight: 'Bayline Cruiser',
+        next: 'Bring it to Wrench\'s garage',
+        target: { x: -240, z: 240, radius: 18 },
+        carName: 'Bayline Cruiser',
+        startDialogue: { speaker: 'Teo "Wrench" Okafor', text: "Grab that Bayline Cruiser. No alarms, no drama—well, maybe a little drama." },
+        endDialogue: { speaker: 'Rio Vance', text: "Cruiser acquired. She purrs nice." },
       },
       {
         type: 'drive_to',
-        target: { x: -319, z: -261, radius: 14 },
-        objective: 'Drive the hauler to Wrench\'s lockup',
-        next: 'Lose the dock guards',
-        dialogueStart: [
-          { speaker: 'Teo "Wrench" Okafor', text: 'Bring it round the back. And watch for dock guards — they bite.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Teo "Wrench" Okafor', text: 'They\'re on your tail! Shake them before you bring trouble to my door.' }
-        ]
+        objective: "Deliver the Bayline Cruiser to Wrench's lockup",
+        highlight: 'lockup',
+        next: 'Lose the attention',
+        target: { x: -180, z: 170, radius: 12 },
+        requireCar: true,
+        carName: 'Bayline Cruiser',
+        startDialogue: { speaker: 'Teo "Wrench" Okafor', text: "Bring her to my lockup. I'll tune her sweet for Mama's runs." },
+        endDialogue: { speaker: 'Teo "Wrench" Okafor', text: "Beautiful work. Keep that heat off you on the way out." },
       },
       {
         type: 'escape',
-        wantedLevel: 0,
-        objective: 'Lose the wanted level',
+        objective: 'Lose your wanted level',
+        highlight: 'wanted level',
         next: 'Mission complete',
-        dialogueStart: [
-          { speaker: 'Rio Vance', text: 'Time to break the tide and vanish.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Teo "Wrench" Okafor', text: 'Clean work. I\'ll strip it for parts and wire Mama her cut.' }
-        ]
-      }
-    ]
+        wantedMax: 0,
+        startDialogue: { speaker: 'Rio Vance', text: "SHP's sniffing around. Time to vanish." },
+        endDialogue: { speaker: 'Teo "Wrench" Okafor', text: "Clean getaway. You and me, Rio—we're back in business." },
+      },
+    ],
   },
   {
-    id: 'neon_tides',
-    title: 'Neon Tides',
-    giver: 'sasha',
-    district: 'Old Pier',
-    act: 1,
+    id: 'act1_neon_tides',
     number: 3,
-    reward: { money: 2400, respect: 300 },
-    unlock: ['tide_breaker'],
+    title: 'Neon Tides',
+    act: 1,
+    actLabel: 'ACT I',
+    giver: 'mama',
+    giverName: 'Mama Inés',
+    district: 'Ferro Docks',
+    reward: { money: 1500, respect: 250 },
+    unlockRequires: ['act1_tide_breaker'],
     stages: [
       {
         type: 'goto',
-        target: { x: -203, z: 261, radius: 12 },
-        objective: 'Meet Sasha Lune at the Old Pier overlook',
-        next: 'Snap proof of Kade\'s runners',
-        dialogueStart: [
-          { speaker: 'Sasha Lune', text: 'Rio, you drive like the old days? Kade\'s runners are moving product off the pier tonight.' },
-          { speaker: 'Rio Vance', text: 'If it hurts Kade\'s grip on Mama, I\'m in.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Sasha Lune', text: 'Good. I need a photo of their handoff — proof we can use later.' }
-        ]
+        objective: 'Meet Sasha Lune at the Marigold marina',
+        highlight: 'marina',
+        next: 'Pick up the package at Ferro Docks',
+        target: { x: -120, z: 260, radius: 10 },
+        startDialogue: { speaker: 'Mama Inés', text: "Kade wants a payment moved tonight. Sasha Lune's running point—meet her at the marina." },
+        endDialogue: { speaker: 'Sasha Lune', text: "Rio Vance. Mama says you can drive. Let's see if you can drive under pressure." },
       },
       {
-        type: 'photo',
-        target: { x: -145, z: 319, radius: 14 },
-        subject: 'Kade\'s runners handoff',
-        objective: 'Photograph Kade\'s runners at the pier handoff',
-        next: 'Chase the runner',
-        dialogueStart: [
-          { speaker: 'Sasha Lune', text: 'Get close enough for a clean shot, but don\'t spook them yet.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Sasha Lune', text: 'Nice shot. One of them\'s bolting — stay on him!' }
-        ]
+        type: 'timed',
+        objective: 'Reach the Ferro Docks pickup before time runs out',
+        highlight: 'Ferro Docks',
+        next: 'Grab the package',
+        target: { x: -260, z: -260, radius: 12 },
+        timeLimit: 75,
+        startDialogue: { speaker: 'Sasha Lune', text: "Clock's ticking. Ferro Docks, north side—move it before Kade's patience runs dry." },
+        endDialogue: { speaker: 'Rio Vance', text: "Made it. Where's the package?" },
       },
       {
-        type: 'chase',
-        target: { x: -87, z: 203, radius: 18 },
-        targetName: 'pier runner',
-        objective: 'Chase and ram the fleeing runner to stop him',
-        next: 'Escape the heat',
-        dialogueStart: [
-          { speaker: 'Rio Vance', text: 'He\'s not getting away with that bag.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Sasha Lune', text: 'Runner\'s down. Heat\'s coming in fast — lose them in the neon.' }
-        ]
+        type: 'collect',
+        objective: 'Collect Kade\'s package from the dock crates',
+        highlight: 'package',
+        next: 'Escape the SHP patrol',
+        target: { x: -275, z: -275, radius: 7 },
+        collectId: 'kade_package',
+        startDialogue: { speaker: 'Sasha Lune', text: "There—marked crate. Grab it and don't look back." },
+        endDialogue: { speaker: 'Sasha Lune', text: "Package hot. SHP's rolling in—lose them!" },
       },
       {
         type: 'escape',
-        wantedLevel: 0,
-        objective: 'Lose the wanted level',
-        next: 'Return to Sasha',
-        dialogueStart: [
-          { speaker: 'Rio Vance', text: 'Time to ride the neon tides out of here.' }
-        ],
-        dialogueEnd: [
-          { speaker: 'Sasha Lune', text: 'Clean vanish. You just bought Mama some breathing room — and Kade\'s attention.' }
-        ]
-      }
-    ]
-  }
+        objective: 'Escape the wanted level',
+        highlight: 'Escape',
+        next: 'Mission complete',
+        wantedMax: 0,
+        wantedMinStart: 2,
+        startDialogue: { speaker: 'Rio Vance', text: "Two stars already? Port Solenne missed me." },
+        endDialogue: { speaker: 'Sasha Lune', text: "Not bad, Vance. Kade noticed. That's good... and dangerous." },
+      },
+    ],
+  },
 ];

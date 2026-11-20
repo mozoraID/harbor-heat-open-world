@@ -23,8 +23,9 @@ export function createPedestrians(scene, state, count = 36) {
     if (side === 2) { z = b.z - off; x = b.x + state.rng.range(-b.size / 2, b.size / 2); dir = Math.PI / 2; }
     if (side === 3) { z = b.z + off; x = b.x + state.rng.range(-b.size / 2, b.size / 2); dir = -Math.PI / 2; }
     model.position.set(x, 0.15, z);
-    model.rotation.y = dir; model.rotation.x = 0; model.visible = true;
-    return { model, x, z, dir, speed: state.rng.range(0.8, 1.5), flee: 0, down: 0, dead: false, health: 30 };
+    model.rotation.y = dir;
+    model.visible = true;
+    return { model, x, z, dir, speed: state.rng.range(0.8, 1.5), flee: 0, down: 0, dead: false, health: 40 };
   }
 
   function update(dt, state) {
