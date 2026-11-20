@@ -59,7 +59,7 @@ export function createDispatchPanel(root) {
   function update(state) {
     const d = state.dispatch || {};
     const units = Array.isArray(d.units) ? d.units : [];
-    const shown = units.slice(0, 4);
+    const shown = units.slice(0, 5);
     const more = Math.max(0, (d.more ?? (units.length - shown.length)));
     const stars = d.stars ?? state.player?.wanted ?? 0;
     const hasRoadblock = !!(d.roadblock || units.some(u => String(u.tag).toUpperCase() === 'ROADBLOCK'));

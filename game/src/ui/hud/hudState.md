@@ -44,12 +44,12 @@ Every widget reads only from the `state` object passed to `update(state)` (plus 
 - `state.dispatch` (object)
   - `visible` (boolean, default `true`)
   - `stars` (number, fallback `state.player.wanted`)
-  - `units` (array, default `[]`, first 4 shown) of:
+  - `units` (array, default `[]`, first 5 shown) of:
     - `callSign` or `callsign` (string, e.g. `"GULL-11"`)
     - `distance` (number metres)
     - `tag` (string: `RAMMING|PIT|FLANKING|ROADBLOCK|SPOTLIGHT|PURSUIT|SEARCHING`)
     - `type` (string, optional: `cruiser|interceptor|armoured|helicopter`) – selects canvas icon (otherwise inferred from callsign/tag).
-  - `more` (number, default remaining beyond 4 shown) – "+N more" count.
+  - `more` (number, default remaining beyond 5 shown) – "+N more" count.
   - `roadblock` (boolean, optional) – forces "ROADBLOCK AHEAD" footer (also shown if any unit tag is ROADBLOCK).
 
 ## Wanted/status (`wanted`)

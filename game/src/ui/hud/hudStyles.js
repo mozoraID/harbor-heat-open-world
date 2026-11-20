@@ -30,7 +30,7 @@ export function injectHudStyles() {
     .hh-top-right { position: absolute; right: 18px; top: 16px; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .hh-bottom-left { position: absolute; left: 18px; bottom: 18px; display: flex; align-items: flex-end; gap: 12px; }
     .hh-bottom-right { position: absolute; right: 18px; bottom: 18px; text-align: right; display:flex; flex-direction:column; align-items:flex-end; }
-    .hh-bottom-center { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); }
+    .hh-bottom-center { position: absolute; left: 490px; right: 320px; bottom: 22px; display: flex; justify-content: center; }
     .hh-center-top { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); text-align: center; }
     .hh-center-mid { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); }
 
@@ -105,7 +105,7 @@ export function injectHudStyles() {
 
     /* Minimap */
     .hh-minimap-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
-    .hh-minimap { width:245px; height:245px; display:block; background:transparent; border:none; box-shadow:0 4px 20px rgba(0,0,0,0.45); }
+    .hh-minimap { width:245px; height:245px; display:block; background:transparent; border:none; border-radius:50%; box-shadow:none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45)); }
     .hh-district-label { font-size:11px; text-transform:uppercase; letter-spacing:1.4px; color:#5cc8ff; font-weight:900; text-shadow:0 1px 3px rgba(0,0,0,0.8); }
 
     /* Speedo */
@@ -125,7 +125,7 @@ export function injectHudStyles() {
 
     /* Radio, dialogue, misc */
     .hh-radio { position:absolute; left:18px; bottom:360px; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:800; }
-    .hh-dialogue { width:640px; max-width:calc(100vw - 220px); padding:10px 12px; display:flex; gap:12px; align-items:flex-start; }
+    .hh-dialogue { width:100%; max-width:520px; padding:10px 12px; display:flex; gap:12px; align-items:flex-start; }
     .hh-portrait { width:72px; height:72px; border-radius:8px; background:#111; flex:0 0 auto; border:2px solid rgba(255,255,255,0.15); }
     .hh-dialogue-name { font-size:14px; font-weight:900; color:#ffcc4d; }
     .hh-dialogue-role { font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#5cc8ff; margin-left:8px; }
