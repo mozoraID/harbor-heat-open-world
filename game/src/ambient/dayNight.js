@@ -16,16 +16,16 @@ function c(hex) { return new THREE.Color(hex); }
 
 // Keyframes over 24h (hours). Interpolated for smooth transitions.
 const KEYS = [
-  { h: 0,    top:0x040814, mid:0x081225, horizon:0x0b1a2a, glow:0x1a2a44, fog:0x0a1420, fogD:0.0036, sunI:0.0,  sunC:0x8899bb, hemiS:0x223355, hemiG:0x0b1020, hemiI:0.18, ambI:0.12 },
-  { h: 4,    top:0x050a18, mid:0x0a1730, horizon:0x13243a, glow:0x223355, fog:0x0c1828, fogD:0.0034, sunI:0.0,  sunC:0x99aacc, hemiS:0x2a3d66, hemiG:0x101828, hemiI:0.22, ambI:0.14 },
-  { h: 5.5,  top:0x12264a, mid:0x3a4f78, horizon:0xff9a6a, glow:0xffc27a, fog:0x6a5060, fogD:0.0028, sunI:0.45, sunC:0xffb070, hemiS:0x6a7fa8, hemiG:0x6a5040, hemiI:0.55, ambI:0.35 },
-  { h: 7,    top:0x2f6fd6, mid:0x74b4e8, horizon:0xffd9a8, glow:0xfff1c8, fog:0xbfd8e8, fogD:0.0018, sunI:1.6,  sunC:0xfff0d8, hemiS:0xbfe3ff, hemiG:0xb9a07a, hemiI:0.95, ambI:0.55 },
-  { h: 12,   top:0x2b6fe0, mid:0x7cc2f2, horizon:0xdff3ff, glow:0xffffff, fog:0xd8ecf6, fogD:0.0014, sunI:2.3,  sunC:0xffffff, hemiS:0xdff4ff, hemiG:0xbda888, hemiI:1.05, ambI:0.6  },
-  { h: 16.5, top:0x2b5cb8, mid:0x6fa8dc, horizon:0xffcc99, glow:0xfff1b8, fog:0xf0c8a0, fogD:0.0019, sunI:2.0,  sunC:0xffe8c0, hemiS:0x9ec9ff, hemiG:0xd8a070, hemiI:0.95, ambI:0.55 },
-  { h: 18.7, top:0x2b5cb8, mid:0x6fa8dc, horizon:0xffb36b, glow:0xfff1b8, fog:0xf6b38a, fogD:0.0022, sunI:2.1,  sunC:0xffe0b0, hemiS:0x9ec9ff, hemiG:0xe0a070, hemiI:0.95, ambI:0.55 }, // golden hour (matches default)
-  { h: 19.5, top:0x1a2f66, mid:0x5a4a78, horizon:0xff7a4a, glow:0xffa060, fog:0x8a5a58, fogD:0.0026, sunI:0.8,  sunC:0xff8844, hemiS:0x5a6fa0, hemiG:0x5a4038, hemiI:0.55, ambI:0.32 },
-  { h: 20.5, top:0x0b1633, mid:0x182848, horizon:0x2a3450, glow:0x445577, fog:0x1a2438, fogD:0.0030, sunI:0.05, sunC:0x7788aa, hemiS:0x334466, hemiG:0x182030, hemiI:0.28, ambI:0.18 },
-  { h: 24,   top:0x040814, mid:0x081225, horizon:0x0b1a2a, glow:0x1a2a44, fog:0x0a1420, fogD:0.0036, sunI:0.0,  sunC:0x8899bb, hemiS:0x223355, hemiG:0x0b1020, hemiI:0.18, ambI:0.12 },
+  { h: 0,    top:0x040814, mid:0x081225, horizon:0x0b1a2a, glow:0x1a2a44, fog:0x0a1420, fogD:0.0036, sunI:0.0,  sunC:0x8899bb, hemiS:0x223355, hemiG:0x0b1020, hemiI:0.18, ambI:0.10 },
+  { h: 4,    top:0x050a18, mid:0x0a1730, horizon:0x13243a, glow:0x223355, fog:0x0c1828, fogD:0.0034, sunI:0.0,  sunC:0x99aacc, hemiS:0x2a3d66, hemiG:0x101828, hemiI:0.22, ambI:0.12 },
+  { h: 5.5,  top:0x12264a, mid:0x3a4f78, horizon:0xff9a6a, glow:0xffc27a, fog:0x6a5060, fogD:0.0028, sunI:0.45, sunC:0xffb070, hemiS:0x6a7fa8, hemiG:0x6a5040, hemiI:0.55, ambI:0.15 },
+  { h: 7,    top:0x2f6fd6, mid:0x74b4e8, horizon:0xffd9a8, glow:0xfff1c8, fog:0xbfd8e8, fogD:0.0018, sunI:1.6,  sunC:0xfff0d8, hemiS:0xbfe3ff, hemiG:0xb9a07a, hemiI:0.95, ambI:0.0  },
+  { h: 12,   top:0x2b6fe0, mid:0x7cc2f2, horizon:0xdff3ff, glow:0xffffff, fog:0xd8ecf6, fogD:0.0014, sunI:2.3,  sunC:0xffffff, hemiS:0xdff4ff, hemiG:0xbda888, hemiI:1.05, ambI:0.0  },
+  { h: 16.5, top:0x2b5cb8, mid:0x6fa8dc, horizon:0xffcc99, glow:0xfff1b8, fog:0xf0c8a0, fogD:0.0019, sunI:2.0,  sunC:0xffe8c0, hemiS:0x9ec9ff, hemiG:0xd8a070, hemiI:0.95, ambI:0.0  },
+  { h: 18.7, top:0x2b5cb8, mid:0x6fa8dc, horizon:0xffb36b, glow:0xfff1b8, fog:0xf6b38a, fogD:0.0022, sunI:2.1,  sunC:0xffe0b0, hemiS:0x9ec9ff, hemiG:0xe0a070, hemiI:0.95, ambI:0.0  }, // golden hour (matches default)
+  { h: 19.5, top:0x1a2f66, mid:0x5a4a78, horizon:0xff7a4a, glow:0xffa060, fog:0x8a5a58, fogD:0.0026, sunI:0.8,  sunC:0xff8844, hemiS:0x5a6fa0, hemiG:0x5a4038, hemiI:0.55, ambI:0.18 },
+  { h: 20.5, top:0x0b1633, mid:0x182848, horizon:0x2a3450, glow:0x445577, fog:0x1a2438, fogD:0.0030, sunI:0.05, sunC:0x7788aa, hemiS:0x334466, hemiG:0x182030, hemiI:0.28, ambI:0.14 },
+  { h: 24,   top:0x040814, mid:0x081225, horizon:0x0b1a2a, glow:0x1a2a44, fog:0x0a1420, fogD:0.0036, sunI:0.0,  sunC:0x8899bb, hemiS:0x223355, hemiG:0x0b1020, hemiI:0.18, ambI:0.10 },
 ];
 
 const PRECOMP = KEYS.map(k => ({

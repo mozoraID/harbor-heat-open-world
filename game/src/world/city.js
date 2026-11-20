@@ -6,6 +6,7 @@ import { createBuildings } from './buildings.js';
 import { createProps } from './props.js';
 import { createWater } from './water.js';
 import { addLandmarks } from '../landmarks/index.js';
+import { addAmbient } from '../ambient/index.js';
 
 export function createCity(scene, state) {
   const layout = createLayout(state.rng);
@@ -19,6 +20,7 @@ export function createCity(scene, state) {
   const props = createProps(scene, layout);
   const water = createWater(scene, layout);
   const landmarks = addLandmarks(scene, layout, state.rng);
+  const ambient = addAmbient({ scene, state, sky, buildings, props, layout, water, city: { layout, sky, ground, buildings, props, water, landmarks } });
 
   state.colliders = buildings.colliders;
   state.world.blocks = layout.blocks;
@@ -32,10 +34,11 @@ export function createCity(scene, state) {
   };
 
   return {
-    layout, sky, ground, buildings, props, water, landmarks,
+    layout, sky, ground, buildings, props, water, landmarks, ambient,
     update(dt, state) {
       water.update(dt);
       if (landmarks && landmarks.update) landmarks.update(dt);
+      if (ambient && ambient.update) ambient.update(dt, state);
       const p = state.player;
       sky.update(dt, { x: p.x, y: p.y, z: p.z });
     },

@@ -5,6 +5,22 @@ import { createHelicopter } from '../police/helicopter.js';
 import { createCarExplosion } from '../combat/carExplosion.js';
 import { resolveCircleColliders } from '../core/collisions.js';
 
+function makeRadialGlowTexture(size = 128) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.2, 'rgba(255,255,255,0.7)');
+  g.addColorStop(0.5, 'rgba(255,255,255,0.18)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const t = new THREE.CanvasTexture(c);
+  t.needsUpdate = true;
+  return t;
+}
+
 function addSirenLights(car, phase = 0) {
   const bar = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.12, 0.36), new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.4, metalness: 0.4 }));
   bar.position.set(0, 2.02, -0.05);
@@ -21,10 +37,11 @@ function addSirenLights(car, phase = 0) {
   const bLight = new THREE.PointLight(0x3388ff, 3.2, 12, 2);
   bLight.position.set(0.32, 2.3, 0.3);
   car.mesh.add(rLight, bLight);
-  const glowRMat = new THREE.SpriteMaterial({ color: 0xff4466, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
-  const glowBMat = new THREE.SpriteMaterial({ color: 0x4499ff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
-  const glowR = new THREE.Sprite(glowRMat); glowR.scale.set(1.8, 1.1, 1); glowR.position.set(-0.32, 2.22, 0.05);
-  const glowB = new THREE.Sprite(glowBMat); glowB.scale.set(1.8, 1.1, 1); glowB.position.set(0.32, 2.22, 0.05);
+  const glowTex = makeRadialGlowTexture();
+  const glowRMat = new THREE.SpriteMaterial({ map: glowTex, color: 0xff4466, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
+  const glowBMat = new THREE.SpriteMaterial({ map: glowTex, color: 0x4499ff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
+  const glowR = new THREE.Sprite(glowRMat); glowR.scale.set(1.2, 1.2, 1); glowR.position.set(-0.32, 2.22, 0.05);
+  const glowB = new THREE.Sprite(glowBMat); glowB.scale.set(1.2, 1.2, 1); glowB.position.set(0.32, 2.22, 0.05);
   car.mesh.add(glowR, glowB);
   return { red, blue, rLight, bLight, glowR, glowB, phase };
 }
@@ -110,35 +127,36 @@ export function stageChaseShot({ app, state, player }) {
   marlin.speed = 39;
   [p1, p2, p3, marlin].forEach((p, i) => { state.cars.push(p); sirens.push(addSirenLights(p, i * 0.8)); });
 
-  // BULWARK roadblock ~50m ahead: two big dark navy armoured trucks with yellow chevrons, angled across road
-  const blockX = heroX + 50;
-  const rb1 = createCar(app.scene, { x: blockX - 1.1, z: laneZ - 2.1, yaw: yaw + 1.35, type: 'armoured', color: '#0b1b3a', name: 'BULWARK Truck', driver: 'police' });
-  const rb2 = createCar(app.scene, { x: blockX + 1.1, z: laneZ + 2.1, yaw: yaw - 1.35, type: 'armoured', color: '#0b1b3a', name: 'BULWARK Truck', driver: 'police' });
+  // BULWARK roadblock ~30m ahead: two big dark navy armoured trucks across both lanes at an angle with bright chevrons
+  const blockX = heroX + 30;
+  const rb1 = createCar(app.scene, { x: blockX - 0.8, z: laneZ - 2.0, yaw: yaw + 1.48, type: 'armoured', color: '#0b1b3a', name: 'BULWARK Truck', driver: 'police' });
+  const rb2 = createCar(app.scene, { x: blockX + 0.8, z: laneZ + 2.0, yaw: yaw - 1.48, type: 'armoured', color: '#0b1b3a', name: 'BULWARK Truck', driver: 'police' });
   rb1.speed = 0; rb2.speed = 0;
-  rb1.mesh.scale.set(1.3, 1.3, 1.3);
-  rb2.mesh.scale.set(1.3, 1.3, 1.3);
+  rb1.mesh.scale.set(1.45, 1.45, 1.45);
+  rb2.mesh.scale.set(1.45, 1.45, 1.45);
   state.cars.push(rb1, rb2);
   sirens.push(addSirenLights(rb1, 0.3));
   sirens.push(addSirenLights(rb2, 1.1));
-  const chevMat = new THREE.MeshStandardMaterial({ color: 0xffd400, emissive: 0xffaa00, emissiveIntensity: 0.45, roughness: 0.35, metalness: 0.2 });
+  const chevMat = new THREE.MeshStandardMaterial({ color: 0xffe000, emissive: 0xffb300, emissiveIntensity: 0.65, roughness: 0.28, metalness: 0.25 });
   for (const rb of [rb1, rb2]) {
     const chev = new THREE.Group();
     for (let i = 0; i < 4; i++) {
-      const w = 1.2 - i * 0.22;
-      const y = 0.95 + i * 0.24;
-      const l = new THREE.Mesh(new THREE.BoxGeometry(w * 0.55, 0.16, 0.08), chevMat);
-      l.position.set(-w * 0.18, y, 2.35); l.rotation.z = 0.55;
-      const r = new THREE.Mesh(new THREE.BoxGeometry(w * 0.55, 0.16, 0.08), chevMat);
-      r.position.set(w * 0.18, y, 2.35); r.rotation.z = -0.55;
+      const w = 1.35 - i * 0.24;
+      const y = 0.95 + i * 0.26;
+      const l = new THREE.Mesh(new THREE.BoxGeometry(w * 0.56, 0.18, 0.1), chevMat);
+      l.position.set(-w * 0.18, y, 2.4); l.rotation.z = 0.55;
+      const r = new THREE.Mesh(new THREE.BoxGeometry(w * 0.56, 0.18, 0.1), chevMat);
+      r.position.set(w * 0.18, y, 2.4); r.rotation.z = -0.55;
       chev.add(l, r);
     }
     rb.mesh.add(chev);
   }
-  const coneMat = new THREE.MeshStandardMaterial({ color: 0xff7a00, emissive: 0xff5500, emissiveIntensity: 0.55 });
-  for (let i = 0; i < 14; i++) {
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.0, 8), coneMat);
-    const t = i / 13;
-    cone.position.set(blockX - 7.5 + t * 15, 0.5, laneZ - 4.4 + Math.sin(i * 0.9) * 0.3);
+  const coneMat = new THREE.MeshStandardMaterial({ color: 0xff7a00, emissive: 0xff5500, emissiveIntensity: 0.7 });
+  // orange cones in front (toward player) and across lanes
+  for (let i = 0; i < 12; i++) {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.05, 8), coneMat);
+    const t = i / 11;
+    cone.position.set(blockX - 4.5 - t * 4.5, 0.52, laneZ - 3.6 + t * 7.2);
     cone.castShadow = true; app.scene.add(cone);
   }
   // "POLICE LINE" barrier between trucks
@@ -154,11 +172,11 @@ export function stageChaseShot({ app, state, player }) {
   const tapeTex = new THREE.CanvasTexture(tapeCanvas);
   tapeTex.wrapS = tapeTex.wrapT = THREE.RepeatWrapping; tapeTex.repeat.set(2, 1);
   tapeTex.needsUpdate = true;
-  const barrier = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.85, 0.18), new THREE.MeshStandardMaterial({ map: tapeTex, color: 0xffffff, emissive: 0x443300, emissiveIntensity: 0.25, roughness: 0.6 }));
-  barrier.position.set(blockX, 1.05, laneZ);
+  const barrier = new THREE.Mesh(new THREE.BoxGeometry(9.4, 0.9, 0.2), new THREE.MeshStandardMaterial({ map: tapeTex, color: 0xffffff, emissive: 0x554400, emissiveIntensity: 0.3, roughness: 0.55 }));
+  barrier.position.set(blockX - 1.5, 1.1, laneZ);
   app.scene.add(barrier);
   const postMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-  for (const sx of [-4.6, 4.6]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.5, 8), postMat); post.position.set(blockX + sx, 0.75, laneZ); app.scene.add(post); }
+  for (const sx of [-4.8, 4.8]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.6, 8), postMat); post.position.set(blockX - 1.5 + sx, 0.8, laneZ); app.scene.add(post); }
 
   // HERON-1 lowered/moved ahead so whole body and rotor sit in upper third of frame
   const heli = createHelicopter(app.scene, state, 'HERON-1');
@@ -201,13 +219,14 @@ export function stageChaseShot({ app, state, player }) {
   app.scene.add(rim); app.scene.add(rim.target);
   const hemi = new THREE.HemisphereLight(0xffe0b0, 0x406080, 0.15);
   app.scene.add(hemi);
-  const sunGlow = new THREE.Mesh(new THREE.SphereGeometry(22, 20, 20), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.24, fog: false }));
+  const sunGlow = new THREE.Mesh(new THREE.SphereGeometry(22, 20, 20), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.12, fog: false }));
   sunGlow.position.set(heroX + 240, 16, laneZ + 8);
   app.scene.add(sunGlow);
-  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffc266, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  sunSprite.scale.set(100, 100, 1); sunSprite.position.set(heroX + 240, 16, laneZ + 8); app.scene.add(sunSprite);
-  const sunSprite2 = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff8c2a, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  sunSprite2.scale.set(150, 60, 1); sunSprite2.position.set(heroX + 230, 14, laneZ + 8); app.scene.add(sunSprite2);
+  const sunGlowTex = makeRadialGlowTexture(256);
+  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunGlowTex, color: 0xffd27a, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  sunSprite.scale.set(80, 80, 1); sunSprite.position.set(heroX + 240, 16, laneZ + 8); app.scene.add(sunSprite);
+  const sunSprite2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunGlowTex, color: 0xff9a3a, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  sunSprite2.scale.set(130, 50, 1); sunSprite2.position.set(heroX + 235, 15, laneZ + 8); app.scene.add(sunSprite2);
   if (app.scene.fog) {
     app.scene.fog.color.setHex(0xffbf7a);
     app.scene.fog.near = 16; app.scene.fog.far = 440;
